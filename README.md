@@ -17,3 +17,7 @@ Available functions
 - stop 
 - shutdown: alias of stop
 - migrate: mig.config
+
+Setup
+
+- passwordless-login to PMs
