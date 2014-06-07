@@ -8,7 +8,7 @@ Manages a cluster consisting of physical machines (PMs) and virtual machines (VM
 Todo list
 - config file: cluster.config, xml?, machine information of PMs and VMs, qemu binary location path 
 - machine information: name, ip address, number of CPUs, memory, MAC adress, 
-- [VM only]: VM image path, PM name (for VM), VNC port, telnet port, migration incoming port
+- [VM only]: VM image path, PM name (for VM), VNC port, telnet port, migration incoming port, daemonize (default)
 
 Available functions
 
