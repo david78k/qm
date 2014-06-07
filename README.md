@@ -5,6 +5,9 @@ QEMU cluster management system
 
 Manages physical machines (PMs) and virtual machines (VMs)
 
+Todo list
+- config file: xml?
+
 Available functions
 
 - list
