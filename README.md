@@ -13,5 +13,5 @@ Available functions
 - list
 - create
 - stop 
-- shutdown: alias to stop
+- shutdown: alias of stop
 - migrate
