@@ -3,10 +3,11 @@ qm
 
 QEMU cluster management system
 
-Manages physical machines (PMs) and virtual machines (VMs)
+Manages a cluster consisting of physical machines (PMs) and virtual machines (VMs)
 
 Todo list
-- config file: xml?
+- config file: xml?, machine information of PMs and VMs
+- machine information: name, ip address, PM name (for VM), number of CPUs, memory, MAC adress
 
 Available functions
 
