@@ -11,3 +11,4 @@ Available functions
 - create
 - stop 
 - shutdown: alias to stop
+- migrate
