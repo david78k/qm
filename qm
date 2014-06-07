@@ -448,7 +448,17 @@ def main(argv):
 	outputfile = ''
 
 	filename = os.path.basename(__file__)
-	usage = filename + ' -s <schedule> -v <vm window> -g <number of gridftp parallel connections> -b <max bandwidth>' 
+	#usage = 'usage: ' + filename + ' -s <schedule> -v <vm window> -g <number of gridftp parallel connections> -b <max bandwidth>' 
+	usage = "usage: qemu [options] [disk_image] \n\
+\n\
+\'disk_image\' is a raw hard disk image for IDE hard disk 0 \n\
+\n\
+Standard options: \n\
+-h or -help     display this help and exit \n\
+-version        display version information and exit \n\
+-M machine      select emulated machine (-M ? for list) \n\
+-cpu cpu        select CPU (-cpu ? for list) \n\
+"
 
 	try:
 		opts, args = getopt.getopt(argv,"hs:v:d:g:b:",["sched=","vwnd=","delay=","gridftp="])
