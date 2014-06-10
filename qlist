@@ -1,0 +1,10 @@
+#!/bin/bash
+
+hosts=( c11node9 c11node10 )
+
+for host in ${hosts[@]}
+do
+	echo $host
+	qlist=`ssh $host ps -ef | grep qemu`
+	echo $qlist
+done
