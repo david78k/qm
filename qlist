@@ -2,9 +2,28 @@
 
 hosts=( c11node9 c11node10 )
 
+#alias qlist="ps -ef | grep qemu | awk '{print \$10,\$12,\$13,\$14,\$15,\$17,\$18,\$19}' | egrep 'slave|master|tomcat|jboss|mysql'"
+#cmd="ps -ef | grep qemu | awk '{print \$2,\$10,\$13,\$14,\$15,\$17,\$18,\$19}' | egrep 'slave|master|tomcat|jboss|mysql'"
+
+# pid, name, memory, vcpu, telnet port, vnc port, migration port
+# needs mac address, ip address
+#cmd="ps -ef | grep qemu | awk '{print \$2,\$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
+cmd="ps -ef | grep qemu | awk '{print \$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
+
 for host in ${hosts[@]}
 do
+	# list all the VMs including on other PMs
 	echo $host
 	qlist=`ssh $host ps -ef | grep qemu`
-	echo $qlist
+	#echo "$qlist"
+	ssh $host $cmd
+
+	#ps -ef | grep qemu | awk '{print $10,$12,$13,$14,$15,$17,$18,$19}' | egrep 'slave|master|tomcat|jboss|mysql'
+	#ps -ef | grep qemu -n
+
+	# grep name or image name
+	vmnames=`ssh $host ps -ef | grep qemu`
+	#echo "$qlist"
+	#ssh c11node10 $cmd
 done
+
