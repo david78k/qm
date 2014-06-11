@@ -5,19 +5,44 @@ hosts=( c11node9 c11node10 )
 # memory used
 #cmd="ps -ef | grep qemu | awk '{print \$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
 cmd="ps -ef | grep qemu | awk '{print \$10}' | egrep 'slave|master|tomcat|jboss|mysql'"
-cmd2="free -m"
+cmd2="free -m | head -2 | tail -1"
+
+echo "Node                 total       used       free     shared    buffers     cached"
 
 for host in ${hosts[@]}
 do
 	# list all the VMs including on other PMs
-	echo $host
+	echo -n "$host "
 	qlist=`ssh $host ps -ef | grep qemu`
 	#echo "$qlist"
+	vms=()
+	i=1
 	ssh $host "$cmd2"
-	ssh $host $cmd | while read vm
+	vmstr=`ssh $host $cmd | while read vm 
+	do 
+		vms[$i]=$vm
+		echo $vm
+	#	echo vm$i: $vm ${vms[$i]}
+		i=$(( i + 1 ))
+		#ssh "$vm; $cmd2"
+	#	echo ${vms[@]}
+	done`
+
+	vmstr=`ssh $host $cmd`
+	#echo $vmstr
+	vms=($vmstr)	
+	echo ${#vms[@]}vms
+	#echo ${#vms[*]}
+
+	#echo ${vms[@]}
+
+	i=1
+	for vm in ${vms[@]}
+#	for vm in ${vms[*]}
 	do
-		echo vm: $vm
-		ssh $vm "free -m"
+		echo -n "vm$i: $vm "
+		ssh $vm $cmd2
+		i=$(( i + 1 ))
 	done
 
 	#ps -ef | grep qemu | awk '{print $10,$12,$13,$14,$15,$17,$18,$19}' | egrep 'slave|master|tomcat|jboss|mysql'
