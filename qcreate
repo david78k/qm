@@ -1,42 +1,86 @@
 #!/bin/bash
 
-# read conf file
+DEBUG=true
+#DEBUG=false
 
+imagedir=/var/lib/libvirt/images/nfs/c11node9
 
 #""" create VM """
+# template image file 
+template=$imagedir/hadoop.qcow2
+
+# vm name to create
+name=hadoop
+host=c11node9
+
+# read conf file
+conf=etc/$host/${name}.conf
+
+while read line
+do
+	# skip empty string
+	if [ -z "$line" ]; then
+		continue
+	fi
+
+	echo $line
+	# set delimeters
+	IFS='= '
+	read -a array <<< "$line"
+#	echo "${array[@]}"
+
+	if [ -z "${array[1]}" ]; then
+		if [ ${array[0]} == "mac" ];then
+			# generate a random mac address for the qemu nic
+			mac=`printf 'DE:AD:BE:EF:%02X:%02X\n' $((RANDOM%256)) $((RANDOM%256))`
+			#mac=DE:AD:BE:EF:0C:0F
+		fi
+		IFS=''
+		continue
+	fi
+
+	if [ ${array[0]} == "image" ];then
+		file=${array[1]}
+	elif [ ${array[0]} == "ram" ];then
+		ram=${array[1]}
+	elif [ ${array[0]} == "vcpu" ];then
+		vcpu=${array[1]}
+	elif [ ${array[0]} == "telnetport" ];then
+		telnetport=${array[1]}
+	elif [ ${array[0]} == "vncport" ];then
+		vncport=${array[1]}
+	elif [ ${array[0]} == "mac" ];then
+		mac=${array[1]}
+	fi
+	IFS=''
+done < $conf
+
 # filename ram vcpu telnetport vncport listenport postcopy
 # master 10.244.36.132 (old 10.244.39.141)
 
-# vm name
-name=master
-#./runvm-daemon ${name}.qcow2 $ram $vcpu 4446 1 $mac $name
-
-#file=migbench.img
-file=$1
-#file=vm512-29.img
-image=/var/lib/libvirt/images/nfs/c11node9/$file
-#ram=536
-#ram=1024
-#ram=128
-ram=$2
-vcpu=$3 # 1-8
-telnetport=$4 # starting 4446
-vncport=$5 # starting 1 (5901)
+#image=/var/lib/libvirt/images/nfs/c11node9/$file
+image=$imagedir/$file
+#telnetport=$4 # starting 4446
+#vncport=$5 # starting 1 (5901)
 
 qemudir=/root/qemu
 #version=qemu-kvm-1.2.0
 #version=qemu-2.0
 version=hybrid # qemu 1.6.50
 
-# generate a random mac address for the qemu nic
-mac=`printf 'DE:AD:BE:EF:%02X:%02X\n' $((RANDOM%256)) $((RANDOM%256))`
-#mac=DE:AD:BE:EF:0C:0F
-#mac=$6
-
 echo $name $file $ram $vcpu $telnetport :$vncport $mac
 
-#./qemu-postcopy/x86_64-softmmu/qemu-system-x86_64 \
-#./qemu-1.5.2/x86_64-softmmu/qemu-system-x86_64 \
+# copy image file from template if not exists
+if [ ! -e $image ]; then
+	echo "copying $template to $image ..."
+fi
+
+if $DEBUG; then
+	exit
+fi
+
+echo "starting VM ..."
+
 $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
         -name $name \
         -drive file=$image \
@@ -47,3 +91,4 @@ $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
         -vnc :$vncport \
         -device virtio-net-pci,netdev=hn0,id=nic1,mac=$mac -netdev tap,helper=$qemudir/$version/qemu-bridge-helper,id=hn0 \
         -daemonize
+
