@@ -1,15 +1,66 @@
 #!/bin/bash
-#alias checkalive="echo -n 'master '; ssh master date; echo -n 'slave1 '; ssh slave1 date; echo -n 'slave2 '; ssh slave2 date; echo -n 'slave3 '; ssh slave3 date;"
 
-nvms=6
+hosts=( c11node9 c11node10 )
 
-cmd="free -m | head -2 | tail -1"
+# memory used
+#cmd="ps -ef | grep qemu | awk '{print \$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
+#cmd="ps -ef | grep qemu | awk '{print \$10}' | egrep 'slave|master|tomcat|jboss|mysql'"
+cmd="ps -ef | grep qemu | grep -v grep | awk '{print \$10}'"
+cmd2="free -m | head -2 | tail -1"
 
-#echo "			total       used       free     shared    buffers     cached"
-echo "VM                   total       used       free     shared    buffers     cached"
-echo -n 'master '; ssh master $cmd; 
+echo -e "Node \t                 total       used       free     shared    buffers     cached"
 
-for (( i = 1; i <= $nvms; i ++ ))
+for host in ${hosts[@]}
 do
-	echo -n slave$i' '; ssh slave$i $cmd; 
+	# list all the VMs including on other PMs
+	vmstr=`ssh $host $cmd`
+	#echo $vmstr
+	vms=($vmstr)	
+	#echo ${#vms[@]}vms
+	echo -n "$host (${#vms[@]}vms) "
+	qlist=`ssh $host ps -ef | grep qemu`
+	#echo "$qlist"
+	i=1
+	ssh $host "$cmd2"
+	vmstr=`ssh $host $cmd | while read vm 
+	do 
+		vms[$i]=$vm
+		echo $vm
+	#	echo vm$i: $vm ${vms[$i]}
+		i=$(( i + 1 ))
+		#ssh "$vm; $cmd2"
+	#	echo ${vms[@]}
+	done`
+
+	#echo ${#vms[*]}
+
+	#echo ${vms[@]}
+
+	i=1
+	for vm in ${vms[@]}
+#	for vm in ${vms[*]}
+	do
+		# file=/var/lib/libvirt/images/nfs/c11node9/slave6.qcow2
+                if [[ $vm == *qcow2* ]]; then
+                        #echo qcow2
+                        vm=${vm%.qcow2}
+                        #echo $vm
+                        vm=${vm##*/}
+                        #echo $vm
+                fi
+
+		echo -n "vm$i: $vm "
+		ssh $vm $cmd2
+		i=$(( i + 1 ))
+	done
+
+	#ps -ef | grep qemu | awk '{print $10,$12,$13,$14,$15,$17,$18,$19}' | egrep 'slave|master|tomcat|jboss|mysql'
+	#ps -ef | grep qemu -n
+
+	# grep name or image name
+	vmnames=`ssh $host ps -ef | grep qemu`
+	#echo "$qlist"
+	#ssh c11node10 $cmd
+	echo
 done
+

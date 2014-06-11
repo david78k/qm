@@ -40,6 +40,15 @@ do
 	for vm in ${vms[@]}
 #	for vm in ${vms[*]}
 	do
+		# file=/var/lib/libvirt/images/nfs/c11node9/slave6.qcow2
+                if [[ $vm == *qcow2* ]]; then
+                        #echo qcow2
+                        vm=${vm%.qcow2}
+                        #echo $vm
+                        vm=${vm##*/}
+                        #echo $vm
+                fi
+
 		echo -n "vm$i: $vm "
 		ssh $vm $cmd2
 		i=$(( i + 1 ))
