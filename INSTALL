@@ -1,1 +1,3 @@
 ln -s /root/qm/qm /usr/bin/
+
+cp etc /etc/qm
