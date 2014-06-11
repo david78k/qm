@@ -1,8 +1,9 @@
 #!/bin/bash
 
-DEBUG=true
-#DEBUG=false
+#DEBUG=true
+DEBUG=false
 
+nfserver=c11node27
 imagedir=/var/lib/libvirt/images/nfs/c11node9
 
 #""" create VM """
@@ -73,6 +74,7 @@ echo $name $file $ram $vcpu $telnetport :$vncport $mac
 # copy image file from template if not exists
 if [ ! -e $image ]; then
 	echo "copying $template to $image ..."
+	ssh $nfserver cp $template $image
 fi
 
 if $DEBUG; then
@@ -81,7 +83,7 @@ fi
 
 echo "starting VM ..."
 
-$qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
+ssh $host $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
         -name $name \
         -drive file=$image \
         -enable-kvm \
