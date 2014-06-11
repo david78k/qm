@@ -4,7 +4,8 @@ hosts=( c11node9 c11node10 )
 
 # memory used
 #cmd="ps -ef | grep qemu | awk '{print \$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
-cmd="ps -ef | grep qemu | awk '{print \$10}' | egrep 'slave|master|tomcat|jboss|mysql'"
+#cmd="ps -ef | grep qemu | awk '{print \$10}' | egrep 'slave|master|tomcat|jboss|mysql'"
+cmd="ps -ef | grep qemu | grep -v grep | awk '{print \$10}'"
 cmd2="free -m | head -2 | tail -1"
 
 echo -e "Node \t                 total       used       free     shared    buffers     cached"
