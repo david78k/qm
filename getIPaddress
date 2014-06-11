@@ -1,0 +1,10 @@
+#!/bin/bash
+
+host=c11node9
+mac=DE:AD:BE:EF:34:5E
+
+# convert mac to lower case
+lcmac=${mac,,}
+echo $lcmac
+
+ssh $host arp -an | grep $lcmac

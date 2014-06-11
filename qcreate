@@ -94,3 +94,7 @@ ssh $host $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
         -device virtio-net-pci,netdev=hn0,id=nic1,mac=$mac -netdev tap,helper=$qemudir/$version/qemu-bridge-helper,id=hn0 \
         -daemonize
 
+# get the IP address of the VM
+# sleep 30
+#ssh $host arp -an | grep ${mac,,}
+

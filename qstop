@@ -1,0 +1,33 @@
+#!/bin/bash
+
+name=hadoop
+
+host=c11node9
+#host=$1
+#host=localhost
+
+#port=4446
+port=4448
+#port=$2
+
+port=`ssh $host ps -ef | grep qemu | grep $name | awk '{print $19}'`
+IFS='=:, '
+read -a array <<< "$port"
+IFS=''
+
+#echo ${array[2]}
+port=${array[2]}
+
+function stopVM () {
+nc $host $port << EOF
+info status
+quit
+EOF
+echo
+}
+
+echo stoppng VM $name on $host:$port ...
+stopVM
+echo done
+
+#info version
