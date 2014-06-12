@@ -19,8 +19,8 @@ rtt=$3
 #rtt=180ms
 #rtt=0.4ms
 
-#ram=2048
-ram=1800
+ram=2048
+#ram=1800
 #vcpu=1
 vcpu=2
 
@@ -28,7 +28,7 @@ vcpu=2
 logbasedir=/root/miglog/idle/cluster
 logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/$rtt
 
-vcpu=1
+#vcpu=1
 
 nvms=$1
 run=$2
@@ -142,7 +142,7 @@ echo $name $file $ram $vcpu $telnetport :$vncport tcp:0:$listenport
 
 #./qemu-postcopy/x86_64-softmmu/qemu-system-x86_64 \
 #./qemu-1.5.2/x86_64-softmmu/qemu-system-x86_64 \
-$qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
+ssh $dest $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
         -name $name \
         -drive file=$image \
         -enable-kvm \
@@ -155,6 +155,7 @@ $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
         -daemonize
 }
 
+# migrate a single VM
 function ncmigrate() {
 name=$1
 file=$2
@@ -172,9 +173,10 @@ background=off
 #background=on
 #mac=$3
 
-# prepare incoming migration at target
+# prepare incoming migration at dest
 # start vm
-ssh $target /root/qemu/listen-daemon $file $ram $vcpu $telnetport $vncport $listenport $name
+listen $file $ram $vcpu $telnetport $vncport $listenport $name
+#ssh $test /root/qemu/listen-daemon $file $ram $vcpu $telnetport $vncport $listenport $name
 
 #if [ $file == "master.qcow2" ]; then
 #       telnetport=4436
@@ -185,7 +187,7 @@ nc $src $telnetport << EOF
 migrate_set_capability postcopy $postcopy
 migrate_set_capability postcopy-move-background $background
 migrate_set_speed $speed
-migrate tcp:$target:$listenport
+migrate tcp:$test:$listenport
 EOF
 echo
 }
@@ -196,8 +198,9 @@ function migrate() {
 	mport=5446 # migration tcp port
 	vport=1 # vnc port
 	name=master
-	ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $masterpost $migspeed 
-	
+	migcmd="ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $masterpost $migspeed"
+	$migcmd
+
 	#for (( i=100; i <$nvms; i++ ))
 	for (( i=1; i <$nvms; i++ ))
 	do
@@ -205,8 +208,9 @@ function migrate() {
 		vport=$(( vport + 1 ))
 		mport=$(( mport + 1 ))
 		name=slave$i
-		echo $i $tport $vport $mport
-		ncmigrate $name.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed $name
+		echo $i $name $tport $vport $mport
+		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
+		$migcmd
 	done
 }
 
@@ -281,6 +285,7 @@ function download() {
         done
 }
 
+# migrate cluster with dstat logging
 function migratecluster() {
 	dstatfile=$prefix.src.dstat
 	srccsv=$dstatfile.csv
@@ -366,7 +371,7 @@ function finish() {
 cpusage
 
 #startcluster
-migratecluster
+time -p migratecluster
 #migratecluster > migrate.log
 #finish
 
