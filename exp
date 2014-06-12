@@ -56,7 +56,7 @@ ssh $router service tc delay $delay
 
 # [ping] c11node9 to c11node10
 if [[ $turn == "ping" ]]; then
-	./cluster $vwnd $run $rtt
+	./migrate $vwnd $run $rtt
 fi
 
 # [pong] c11node10 to c11node9
