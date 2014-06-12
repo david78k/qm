@@ -1,0 +1,13 @@
+Node 	                 total       used       free     shared    buffers     cached
+c11node9 (6vms) Mem:         24150      13315      10834          0        402       9485
+vm1: master Mem:          1877        138       1738          0         31         47
+vm2: slave1 Mem:          1877        140       1736          0         32         47
+vm3: slave2 Mem:          1877        120       1756          0         30         29
+vm4: slave3 Mem:          1877        120       1756          0         30         29
+vm5: slave4 Mem:          1877        120       1756          0         30         29
+vm6: slave5 Mem:          1877        121       1756          0         30         29
+
+c11node10 (2vms) Mem:         24150      13642      10507          0         50      11660
+vm1: slave6 Mem:          1877        120       1757          0         30         29
+vm2: slave7 Mem:          1877        113       1763          0         22         30
+
