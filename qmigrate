@@ -7,11 +7,6 @@ dest=c11node10
 router=c11node28
 ganglia=10.244.36.20
 
-#postcopy=on
-postcopy=off
-#masterpost=on
-masterpost=off
-
 #migspeed=30
 migspeed=125
 
@@ -23,6 +18,13 @@ ram=2048
 #ram=1800
 #vcpu=1
 vcpu=2
+
+is_exp=false
+
+#postcopy=on
+postcopy=off
+#masterpost=on
+masterpost=off
 
 # log/idle/cluster/precopy/speed125/vcpu2/180ms/
 logbasedir=/root/miglog/idle/cluster
@@ -52,6 +54,60 @@ remain=$nports
 # for cpu utilization
 PREV_TOTAL=0
 PREV_IDLE=0
+
+function exp() {
+# specify only exp-specific parameters
+src=c11node9
+dest=c11node10
+router=c11node28
+
+ganglia=10.244.36.20
+
+# RTT = delay*2
+#delay=90       # 180ms RTT
+#delay=40       # 80ms RTT
+delay=10        # 20ms RTT
+#delay=0                # 0.4ms RTT (LAN)
+rtt=$(( delay * 2 ))ms
+
+vwnd=2
+run=1
+prefix=${vwnd}vms-r${run}
+#prefix=1vm-r4
+
+# ping or pong
+turn=pong
+
+logdir=/root/qm/log
+logfile=$logdir/${prefix}.logfile
+
+# last minutes for ganglia metrics
+#min=3min
+min=5min
+
+ssh $router service tc delay $delay
+
+# run workload: wordcount, terasort, kmeans, fuzzy kmeans, LDA
+#ssh master "cd /root/mahout; ./run" &
+
+#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
+time -p ./migrate $vwnd $run $rtt $turn
+
+# [ping] c11node9 to c11node10
+#if [[ $turn == "ping" ]]; then
+#       ./migrate $vwnd $run $rtt
+#fi
+
+# [pong] c11node10 to c11node9
+#if [[ $turn == "pong" ]]; then
+#       ./migrate $vwnd $run $rtt
+#       ssh $dest "cd /root/qemu/; ./cluster $vwnd $run"
+#fi
+
+#download
+
+ssh $router service tc stop
+}
 
 function startcluster() {
 	# generate a random mac address for the qemu nic
@@ -119,9 +175,7 @@ name=$7
 file=$1
 #file=vm512-29.img
 image=/var/lib/libvirt/images/nfs/c11node9/$file
-#ram=536
 #ram=1024
-#ram=128
 ram=$2
 vcpu=$3 # 1-8
 telnetport=$4 # starting 4436
@@ -261,6 +315,7 @@ function check() {
 	tr '\r' '\n' < $miglog > $migtxt
 }
 
+# download ganglia metrics
 function download() {
 	min=3min
 	wget -O $prefix.src.net.png "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=c11node9&s=by+name&g=network_report"
@@ -314,7 +369,7 @@ function migratecluster() {
 	# delete the first 5 lines
 	#sed -i '1,5d' $dstatfile
 
-	download
+#	download
 
 	#ssh $dest mkdir -p $logdir
 	#scp $dest:$destcsv $prefix

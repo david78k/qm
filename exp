@@ -1,7 +1,8 @@
 #!/bin/bash
 
+# specify only exp-specific parameters
 src=c11node9
-target=c11node10
+dest=c11node10
 router=c11node28
 
 ganglia=10.244.36.20
@@ -21,6 +22,9 @@ prefix=${vwnd}vms-r${run}
 # ping or pong
 turn=pong
 
+logdir=/root/qm/log
+logfile=$logdir/${prefix}.logfile
+
 # last minutes for ganglia metrics
 #min=3min
 min=5min
@@ -31,10 +35,10 @@ function download() {
         wget -O $prefix.src.net.csv "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=c11node9&s=by+name&g=network_report&csv=1"
         wget -O $prefix.src.cpu.png "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=c11node9&s=by+name&g=cpu_report"
         wget -O $prefix.src.cpu.csv "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=c11node9&s=by+name&g=cpu_report&csv=1"
-        wget -O $prefix.dest.net.png "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${target}&s=by+name&g=network_report"
-        wget -O $prefix.dest.net.csv "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${target}&s=by+name&g=network_report&csv=1"
-        wget -O $prefix.dest.cpu.png "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${target}&s=by+name&g=cpu_report"
-        wget -O $prefix.dest.cpu.csv "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${target}&s=by+name&g=cpu_report&csv=1"
+        wget -O $prefix.dest.net.png "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${dest}&s=by+name&g=network_report"
+        wget -O $prefix.dest.net.csv "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${dest}&s=by+name&g=network_report&csv=1"
+        wget -O $prefix.dest.cpu.png "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${dest}&s=by+name&g=cpu_report"
+        wget -O $prefix.dest.cpu.csv "http://10.244.36.20/ganglia/graph.php?r=${min}&z=medium&c=Hadoop&h=${dest}&s=by+name&g=cpu_report&csv=1"
 
 	for node in master slave1 slave2 slave3
 	do
@@ -54,16 +58,20 @@ ssh $router service tc delay $delay
 # run workload: wordcount, terasort, kmeans, fuzzy kmeans, LDA
 #ssh master "cd /root/mahout; ./run" &
 
+#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
+time -p ./migrate $vwnd $run $rtt $turn
+
 # [ping] c11node9 to c11node10
-if [[ $turn == "ping" ]]; then
-	./migrate $vwnd $run $rtt
-fi
+#if [[ $turn == "ping" ]]; then
+#	./migrate $vwnd $run $rtt
+#fi
 
 # [pong] c11node10 to c11node9
-if [[ $turn == "pong" ]]; then
-	ssh $target "cd /root/qemu/; ./cluster $vwnd $run"
-fi
+#if [[ $turn == "pong" ]]; then
+#	./migrate $vwnd $run $rtt
+#	ssh $dest "cd /root/qemu/; ./cluster $vwnd $run"
+#fi
 
-download
+#download
 
 ssh $router service tc stop
