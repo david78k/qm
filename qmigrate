@@ -14,12 +14,15 @@ rtt=$3
 #rtt=180ms
 #rtt=0.4ms
 
+turn=$4
+
 ram=2048
 #ram=1800
 #vcpu=1
 vcpu=2
 
-is_exp=false
+# is this exp mode?
+IS_EXP=false
 
 #postcopy=on
 postcopy=off
@@ -32,10 +35,10 @@ logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/$rtt
 
 #vcpu=1
 
-nvms=$1
+vwnd=$1
 run=$2
 #prefix=2vms-r2
-prefix=$logdir/${nvms}vms-r${run}
+prefix=$logdir/${vwnd}vms-r${run}
 
 ports=( 4446 4447 4448 4449 4450 4451 )
 nports=${#ports[@]}
@@ -55,43 +58,38 @@ remain=$nports
 PREV_TOTAL=0
 PREV_IDLE=0
 
-function exp() {
-# specify only exp-specific parameters
-src=c11node9
-dest=c11node10
-router=c11node28
+function doexp() {
+	# specify only exp-specific parameters
 
-ganglia=10.244.36.20
+	# RTT = delay*2
+	#delay=90       # 180ms RTT
+	#delay=40       # 80ms RTT
+	delay=10        # 20ms RTT
+	#delay=0                # 0.4ms RTT (LAN)
+	rtt=$(( delay * 2 ))ms
 
-# RTT = delay*2
-#delay=90       # 180ms RTT
-#delay=40       # 80ms RTT
-delay=10        # 20ms RTT
-#delay=0                # 0.4ms RTT (LAN)
-rtt=$(( delay * 2 ))ms
+	vwnd=2
+	run=1
+	prefix=${vwnd}vms-r${run}
+	#prefix=1vm-r4
 
-vwnd=2
-run=1
-prefix=${vwnd}vms-r${run}
-#prefix=1vm-r4
+	# ping or pong
+	turn=pong
 
-# ping or pong
-turn=pong
+	logdir=/root/qm/log
+	logfile=$logdir/${prefix}.logfile
 
-logdir=/root/qm/log
-logfile=$logdir/${prefix}.logfile
+	# last minutes for ganglia metrics
+	#min=3min
+	min=5min
 
-# last minutes for ganglia metrics
-#min=3min
-min=5min
+	ssh $router service tc delay $delay
 
-ssh $router service tc delay $delay
+	# run workload: wordcount, terasort, kmeans, fuzzy kmeans, LDA
+	#ssh master "cd /root/mahout; ./run" &
 
-# run workload: wordcount, terasort, kmeans, fuzzy kmeans, LDA
-#ssh master "cd /root/mahout; ./run" &
-
-#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
-time -p ./migrate $vwnd $run $rtt $turn
+	#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
+	time -p ./migrate $vwnd $run $rtt $turn
 
 # [ping] c11node9 to c11node10
 #if [[ $turn == "ping" ]]; then
@@ -104,159 +102,120 @@ time -p ./migrate $vwnd $run $rtt $turn
 #       ssh $dest "cd /root/qemu/; ./cluster $vwnd $run"
 #fi
 
-#download
+	#download
 
-ssh $router service tc stop
-}
-
-function startcluster() {
-	# generate a random mac address for the qemu nic
-	mac=`printf 'DE:AD:BE:EF:%02X:%02X\n' $((RANDOM%256)) $((RANDOM%256))`
-
-	# filename ram vcpu telnetport vncport listenport postcopy
-	# master 10.244.36.132 (old 10.244.39.141)
-	mac=DE:AD:BE:EF:0C:0F
-	name=master
-	#./runvm-daemon ${name}.qcow2 $ram $vcpu 4446 1 $mac $name
-
-	# slave1 10.244.37.1
-	mac=DE:AD:BE:EF:FA:3A
-	#./runvm-daemon slave1.qcow2 $ram $vcpu 4447 2 $mac
-
-	# slave2 10.244.38.71
-	mac=DE:AD:BE:EF:FF:57
-	#./runvm-daemon slave2.qcow2 $ram $vcpu 4448 3 $mac
-
-	# slave3 10.244.38.70
-	mac=DE:AD:BE:EF:A6:75
-	#./runvm-daemon slave3.qcow2 $ram $vcpu 4449 4 $mac
-
-	# slave4 10.244.37.127
-	mac=DE:AD:BE:EF:5D:A2
-	#./runvm-daemon slave4.qcow2 $ram $vcpu ${ports[4]} 5 $mac
-
-	# slave5 10.244.36.115
-	mac=DE:AD:BE:EF:70:62
-	#./runvm-daemon slave5.qcow2 $ram $vcpu ${ports[5]} 6 $mac
-
-	tport=4446 # telnet port
-	mport=5446 # migration tcp port
-	vport=1 # vnc port
-	
-	# slave6 10.244.39.141
-	slaveid=6
-	tport=$(( tport + 6 ))
-	vport=$(( vport + 6 ))
-	mac=DE:AD:BE:EF:48:B4
-	#./runvm-daemon slave${slaveid}.qcow2 $ram $vcpu $tport $vport $mac
-
-	# slave7 10.244.39.141
-	slaveid=$(( slaveid + 1 ))
-	tport=$(( tport + 1 ))
-	vport=$(( vport + 1 ))
-	#mac=DE:AD:BE:EF:48:B4
-	name=slave${slaveid}
-	./runvm-daemon ${name}.qcow2 $ram $vcpu $tport $vport $mac $name
-
-	#for i in {1..$nports}
-	for (( i=1; i <$nvms; i++ ))
-	#for (( i=100; i <$nvms; i++ ))
-	do
-		tport=$(( tport + 1 ))	# telnet port
-		vport=$(( vport + 1 ))	# vnc port
-	#	echo $i $tport $vport 
-#		./runvm-daemon slave${i}.qcow2 $ram $vcpu $tport $vport $mac
-	done
+	ssh $router service tc stop
 }
 
 function listen() {
-name=$7
-#file=migbench.img
-file=$1
-#file=vm512-29.img
-image=/var/lib/libvirt/images/nfs/c11node9/$file
-#ram=1024
-ram=$2
-vcpu=$3 # 1-8
-telnetport=$4 # starting 4436
-vncport=$5 # starting 1 (5901)
-listenport=$6 # starting 5436
+	name=$1
+	#file=migbench.img
+	file=$2
+	#file=vm512-29.img
+	image=/var/lib/libvirt/images/nfs/c11node9/$file
+	#ram=1024
+	ram=$3
+	vcpu=$4 # 1-8
+	telnetport=$5 # starting 4436
+	vncport=$6 # starting 1 (5901)
+	listenport=$7 # starting 5436
 
-qemudir=/root/qemu
-#version=qemu-kvm-1.2.0
-#version=qemu-1.6.0
-#version=qemu-1.5.50
-#version=qemu-postcopy # qemu 1.1.50
-version=hybrid # qemu 1.6.50
+	qemudir=/root/qemu
+	#version=qemu-2.0
+	#version=qemu-postcopy # qemu 1.1.50
+	version=hybrid # qemu 1.6.50
 
-# generate a random mac address for the qemu nic
-#mac=`printf 'DE:AD:BE:EF:%02X:%02X\n' $((RANDOM%256)) $((RANDOM%256))`
+	echo $name $file $ram $vcpu $telnetport :$vncport tcp:0:$listenport
 
-echo $name $file $ram $vcpu $telnetport :$vncport tcp:0:$listenport
-
-#./qemu-postcopy/x86_64-softmmu/qemu-system-x86_64 \
-#./qemu-1.5.2/x86_64-softmmu/qemu-system-x86_64 \
-ssh $dest $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
-        -name $name \
-        -drive file=$image \
-        -enable-kvm \
-        -m $ram \
-        -smp $vcpu \
-        -monitor telnet:0:$telnetport,server,nowait \
-        -vnc :$vncport \
-        -incoming tcp:0:$listenport \
-        -device virtio-net-pci,netdev=hn0,id=nic1 -netdev tap,helper=$qemudir/$version/qemu-bridge-helper,id=hn0 \
-        -daemonize
+	ssh $dest $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
+	        -name $name \
+	        -drive file=$image \
+	        -enable-kvm \
+	        -m $ram \
+	        -smp $vcpu \
+	        -monitor telnet:0:$telnetport,server,nowait \
+	        -vnc :$vncport \
+	        -incoming tcp:0:$listenport \
+	        -device virtio-net-pci,netdev=hn0,id=nic1 -netdev tap,helper=$qemudir/$version/qemu-bridge-helper,id=hn0 \
+	        -daemonize
 }
 
 # migrate a single VM
 function ncmigrate() {
-name=$1
-file=$2
-ram=$3
-vcpu=$4
-telnetport=$5
-vncport=$6
-listenport=$7
-postcopy=$8
-speed=$9
-#speed=125
-#speed=30
+	name=$1
+	file=$2
+	ram=$3
+	vcpu=$4
+	telnetport=$5
+	vncport=$6
+	listenport=$7
+	postcopy=$8
+	speed=$9
+	#speed=125
+	#speed=30
 
-background=off
-#background=on
-#mac=$3
+	background=off
+	#background=on
+	#mac=$3
 
-# prepare incoming migration at dest
-# start vm
-listen $file $ram $vcpu $telnetport $vncport $listenport $name
-#ssh $test /root/qemu/listen-daemon $file $ram $vcpu $telnetport $vncport $listenport $name
+	# prepare incoming migration at dest
+	# start vm
+	listen $name $file $ram $vcpu $telnetport $vncport $listenport 
+	#ssh $test /root/qemu/listen-daemon $file $ram $vcpu $telnetport $vncport $listenport $name
 
-#if [ $file == "master.qcow2" ]; then
-#       telnetport=4436
-#fi
+	#if [ $file == "master.qcow2" ]; then
+	#       telnetport=4436
+	#fi
 
-# migrate
+	# migrate
 nc $src $telnetport << EOF
 migrate_set_capability postcopy $postcopy
 migrate_set_capability postcopy-move-background $background
 migrate_set_speed $speed
 migrate tcp:$test:$listenport
 EOF
-echo
+
+	echo
 }
 
-# migrate multiple VMs
+function getCNVMs() {
+	host=$1
+	cnvms=0
+
+	# get the number of current runing VMs
+	cnvms=`ssh $host ps -ef | grep qemu | grep -v grep | wc -l`
+	echo $cnvms			
+}
+
+# migrate multiple VMs with VM window
 function migrate() {
+	from=$src
+	to=$dest
+	
+	if [ $turn == "pong" ]; then
+		from=$dest
+		to=$src
+	fi
+	getCNVMs $from 
+
+	echo number of current running VMs = $cnvms
+
+	if [[ $vwnd -gt $cnvms ]];then
+		vwnd=$cnvms
+	fi	
+	echo vwnd = $vwnd
+}
+
+function migrateold() {
 	tport=4446 # telnet port
 	mport=5446 # migration tcp port
 	vport=1 # vnc port
 	name=master
 	migcmd="ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $masterpost $migspeed"
-	$migcmd
+#	$migcmd
 
-	#for (( i=100; i <$nvms; i++ ))
-	for (( i=1; i <$nvms; i++ ))
+	#for (( i=100; i <$vwnd; i++ ))
+	for (( i=1; i <$vwnd; i++ ))
 	do
 		tport=$(( tport + 1 ))
 		vport=$(( vport + 1 ))
@@ -264,7 +223,7 @@ function migrate() {
 		name=slave$i
 		echo $i $name $tport $vport $mport
 		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
-		$migcmd
+#		$migcmd
 	done
 }
 
@@ -278,9 +237,9 @@ function check() {
 	do
 		#remain=${#ports[@]}
 		#remain=$nports
-		remain=$nvms
+		remain=$vwnd
 		#for port in ${ports[@]}; 
-		for (( port=4446; port <4446 + $nvms; port++ ))
+		for (( port=4446; port <4446 + $vwnd; port++ ))
 		do
 			info=`./bin/checkstatus localhost $port`
 			if [[ -z $info ]]; then
@@ -349,6 +308,7 @@ function migratecluster() {
 	dstatrouter=$prefix.router.dstat
 	routercsv=$dstatrouter.csv
 	
+	if $IS_EXP ; then
         dstatcmd="dstat -cnmd -N eth0,eth1,total --noheaders -o "
         #dstat -cmdngy -N eth0,eth1,total --noheaders > $dstatfile &
         $dstatcmd $srccsv > $dstatfile &
@@ -358,16 +318,19 @@ function migratecluster() {
 	#ssh $dest "$dstatcmd $dstatdest" &
 	ssh $router mkdir -p $logdir
 	ssh $router $dstatcmd $routercsv > $dstatrouter &
+	fi
 
 #	sleep $preptime
 	migrate 
-	check
+#	check
 
+	if $IS_EXP ; then
         # stop dstat
         pgrep -fl dstat| awk '{print $1}' | xargs kill -9
         ssh $dest "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
 	# delete the first 5 lines
 	#sed -i '1,5d' $dstatfile
+	fi
 
 #	download
 
@@ -425,7 +388,6 @@ function finish() {
 
 cpusage
 
-#startcluster
 time -p migratecluster
 #migratecluster > migrate.log
 #finish
