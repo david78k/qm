@@ -4,23 +4,30 @@
 DEBUG=false
 
 nfserver=c11node27
+nfsdir=/var/lib/libvirt/images/c11node9
 imagedir=/var/lib/libvirt/images/nfs/c11node9
 
 #""" create VM """
 # template image file 
-template=$imagedir/hadoop.qcow2
+template=$nfsdir/hadoop.qcow2
 
 # vm name to create
-name=hadoop
+#name=hadoop
+name=test
 host=c11node9
 
 # read conf file
-conf=etc/$host/${name}.conf
+basedir=/root/qm
+conf=$basedir/etc/$host/${name}.conf
 
 while read line
 do
 	# skip empty string
 	if [ -z "$line" ]; then
+		continue
+	fi
+
+	if [[ "$line" = "\#*" ]]; then
 		continue
 	fi
 
@@ -59,7 +66,6 @@ done < $conf
 # filename ram vcpu telnetport vncport listenport postcopy
 # master 10.244.36.132 (old 10.244.39.141)
 
-#image=/var/lib/libvirt/images/nfs/c11node9/$file
 image=$imagedir/$file
 #telnetport=$4 # starting 4446
 #vncport=$5 # starting 1 (5901)

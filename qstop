@@ -1,14 +1,15 @@
 #!/bin/bash
 
-name=hadoop
-
-host=c11node9
-#host=$1
+# stop VM by name
+#host=c11node9
+host=$1
 #host=localhost
 
+#name=hadoop
+name=$2
+
 #port=4446
-port=4448
-#port=$2
+#port=
 
 port=`ssh $host ps -ef | grep qemu | grep $name | awk '{print $19}'`
 IFS='=:, '

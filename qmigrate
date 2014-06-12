@@ -34,7 +34,6 @@ run=$2
 prefix=$logdir/${nvms}vms-r${run}
 
 ports=( 4446 4447 4448 4449 4450 4451 )
-#ports=( 4447 4448 4449 )
 nports=${#ports[@]}
 
 # boot up vm 
@@ -45,6 +44,7 @@ sleeptime=5
 
 mkdir -p $logdir
 
+# number of remaining VMs to migrate
 remain=$nports
 
 # for cpu utilization
@@ -117,7 +117,7 @@ function migrate() {
 	mport=5446 # migration tcp port
 	vport=1 # vnc port
 	name=master
-	./ncmigrate ${name}.qcow2 $ram $vcpu $tport $vport $mport $masterpost $migspeed $name
+	./ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $masterpost $migspeed 
 	
 	#for (( i=100; i <$nvms; i++ ))
 	for (( i=1; i <$nvms; i++ ))

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+target=c11node10
+#target=10.5.147.210
+name=$1
+file=$2
+ram=$3
+vcpu=$4
+telnetport=$5
+vncport=$6
+listenport=$7
+postcopy=$8
+speed=$9
+#speed=125
+#speed=30
+
+background=off
+#background=on
+#mac=$3
+
+# prepare incoming migration at target
+# start vm
+ssh $target /root/qemu/listen-daemon $file $ram $vcpu $telnetport $vncport $listenport $name
+
+#if [ $file == "master.qcow2" ]; then
+#	telnetport=4436
+#fi
+
+# migrate
+nc localhost $telnetport << EOF
+migrate_set_capability postcopy $postcopy
+migrate_set_capability postcopy-move-background $background
+migrate_set_speed $speed
+migrate tcp:$target:$listenport
+EOF
+echo
+
+#info version
+#info kvm
+
+#sleep 5
+# check if complete
+#while 
+#do
+#	if complete
+# stop vm
+#nc localhost $telnetport << EOF
+#info migrate
+#info status
+#EOF
+#echo
+
+#quit
+#info migrate_capabilities
+	
+#	fi
+#done
+

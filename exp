@@ -62,7 +62,8 @@ fi
 # [pong] c11node10 to c11node9
 if [[ $turn == "pong" ]]; then
 	ssh $target "cd /root/qemu/; ./cluster $vwnd $run"
-	download
 fi
+
+download
 
 ssh $router service tc stop
