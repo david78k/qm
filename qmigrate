@@ -21,8 +21,9 @@ ram=2048
 #vcpu=1
 vcpu=2
 
-# is this exp mode?
-IS_EXP=false
+# is logging enabled?
+LOGGING=false
+#LOGGING=true
 
 #postcopy=on
 postcopy=off
@@ -40,9 +41,6 @@ run=$2
 #prefix=2vms-r2
 prefix=$logdir/${vwnd}vms-r${run}
 
-ports=( 4446 4447 4448 4449 4450 4451 )
-nports=${#ports[@]}
-
 # boot up vm 
 preptime=90
 
@@ -52,19 +50,19 @@ sleeptime=5
 mkdir -p $logdir
 
 # number of remaining VMs to migrate
-remain=$nports
+remain=0
 
 # for cpu utilization
 PREV_TOTAL=0
 PREV_IDLE=0
 
-	from=$src
-	to=$dest
+from=$src
+to=$dest
 	
-	if [ $turn == "pong" ]; then
-		from=$dest
-		to=$src
-	fi
+if [ $turn == "pong" ]; then
+	from=$dest
+	to=$src
+fi
 
 function doexp() {
 	# specify only exp-specific parameters
@@ -322,13 +320,11 @@ function check() {
 	#while [ $remain -gt 0 ]; 
 	while [ 1 ]; 
 	do
-		#remain=${#ports[@]}
-		#remain=$nports
 		remain=$vwnd
 		#for port in ${ports[@]}; 
 		for (( port=4446; port <4446 + $vwnd; port++ ))
 		do
-			info=`./bin/checkstatus localhost $port`
+			info=`./checkstatus $from $port`
 			if [[ -z $info ]]; then
 				(( remain -- ))
 				continue
@@ -342,7 +338,7 @@ function check() {
 				echo "$info"
 				echo $info >> $miglog
 
-				./bin/stopvm localhost $port
+				./qstop $from $port
 				#./stopvm $dest $port
 				(( remain -- ))
 				continue
@@ -395,35 +391,34 @@ function migratecluster() {
 	dstatrouter=$prefix.router.dstat
 	routercsv=$dstatrouter.csv
 	
-	if $IS_EXP ; then
-        dstatcmd="dstat -cnmd -N eth0,eth1,total --noheaders -o "
-        #dstat -cmdngy -N eth0,eth1,total --noheaders > $dstatfile &
-        $dstatcmd $srccsv > $dstatfile &
-        #ssh $dest "dstat -cmdngy -N eth0,eth1,total --noheaders" > $dstatdest &
-	ssh $dest mkdir -p $logdir
-	ssh $dest $dstatcmd $destcsv > $dstatdest &
-	#ssh $dest "$dstatcmd $dstatdest" &
-	ssh $router mkdir -p $logdir
-	ssh $router $dstatcmd $routercsv > $dstatrouter &
+	if $LOGGING ; then
+	        dstatcmd="dstat -cnmd -N eth0,eth1,total --noheaders -o "
+	        #dstat -cmdngy -N eth0,eth1,total --noheaders > $dstatfile &
+	        $dstatcmd $srccsv > $dstatfile &
+	        #ssh $dest "dstat -cmdngy -N eth0,eth1,total --noheaders" > $dstatdest &
+		ssh $dest mkdir -p $logdir
+		ssh $dest $dstatcmd $destcsv > $dstatdest &
+		#ssh $dest "$dstatcmd $dstatdest" &
+		ssh $router mkdir -p $logdir
+		ssh $router $dstatcmd $routercsv > $dstatrouter &
 	fi
 
 #	sleep $preptime
 	migrate 
-#	check
+	check
 
-	if $IS_EXP ; then
-        # stop dstat
-        pgrep -fl dstat| awk '{print $1}' | xargs kill -9
-        ssh $dest "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
-	# delete the first 5 lines
-	#sed -i '1,5d' $dstatfile
+	if $LOGGING ; then
+	        # stop dstat
+	        pgrep -fl dstat| awk '{print $1}' | xargs kill -9
+	        ssh $dest "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
+		# delete the first 5 lines
+		#sed -i '1,5d' $dstatfile
+	#	download
+
+		#ssh $dest mkdir -p $logdir
+		#scp $dest:$destcsv $prefix
+		#scp $router:$routercsv $prefix
 	fi
-
-#	download
-
-	#ssh $dest mkdir -p $logdir
-	#scp $dest:$destcsv $prefix
-	#scp $router:$routercsv $prefix
 
         # plot host cpu/net usage
 	# fix to add both send/receive
@@ -468,7 +463,7 @@ function finish() {
 	do
 		echo $port
 
-		./bin/stopvm localhost $port
+		./qstop $from $port
 #		./stopvm $dest $port
 	done
 }
