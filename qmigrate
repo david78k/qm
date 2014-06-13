@@ -231,6 +231,10 @@ function migrate() {
 	readarray -t array <<< "$vms"
 	
 	i=0
+
+	# retrieve VM information from ps
+	# name mport ram vcpu tport vport
+	# 10   13    15   17   19    21
 	#for (( i=0; i <$vwnd; i++ ))
 	#for vm in "${vms[@]}"
 	for vm in "${array[@]}"
@@ -241,14 +245,20 @@ function migrate() {
 
 		# get the VM information for migration such as
 		# name, ram, vcpu, telnet port, vnc port, migration port
-		#vminfo=`getVMInfo $1`
+	
+		name=`echo $vm | awk '{print $10}'`
+		# file=/var/lib/libvirt/images/nfs/c11node9/slave6.qcow2
+		name=${name%.qcow2}
+                name=${name##*/}
 
+		mport=`echo $vm | awk '{print $13}'`
+		ram=`echo $vm | awk '{print $15}'`
+		vcpu=`echo $vm | awk '{print $17}'`
 		tport=`echo $vm | awk '{print $19}'`
 		vport=`echo $vm | awk '{print $21}'`
-		mport=`echo $vm | awk '{print $13}'`
-		#name=slave$i
-		echo $i $vm
-		echo $i $name $tport $vport $mport
+
+		#echo $i $vm
+		echo $i $name $ram $vcpu $tport $vport $mport
 		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
 #		$migcmd
 		i=$(( i + 1))
