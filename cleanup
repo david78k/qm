@@ -1,0 +1,7 @@
+# check and stop dstat processes
+# ps -ef | grep dstat
+
+# copy the log files
+# cp $from $prefix
+# cp $to $prefix
+# cp $router $prefix

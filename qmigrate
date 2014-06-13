@@ -25,6 +25,9 @@ vcpu=2
 #LOGGING=false
 LOGGING=true
 
+#TEST=true
+TEST=false
+
 #postcopy=on
 postcopy=off
 #masterpost=on
@@ -49,10 +52,6 @@ sleeptime=5
 
 mkdir -p $logdir
 
-# for cpu utilization
-PREV_TOTAL=0
-PREV_IDLE=0
-
 from=$src
 to=$dest
 	
@@ -60,6 +59,12 @@ if [ $turn == "pong" ]; then
 	from=$dest
 	to=$src
 fi
+
+echo vwnd = $vwnd, run = $run, RTT = $rtt, turn = $turn
+
+# for cpu utilization
+PREV_TOTAL=0
+PREV_IDLE=0
 
 function doexp() {
 	# specify only exp-specific parameters
@@ -94,53 +99,7 @@ function doexp() {
 	#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
 	time -p ./migrate $vwnd $run $rtt $turn
 
-# [ping] c11node9 to c11node10
-#if [[ $turn == "ping" ]]; then
-#       ./migrate $vwnd $run $rtt
-#fi
-
-# [pong] c11node10 to c11node9
-#if [[ $turn == "pong" ]]; then
-#       ./migrate $vwnd $run $rtt
-#       ssh $dest "cd /root/qemu/; ./cluster $vwnd $run"
-#fi
-
-	#download
-
 	ssh $router service tc stop
-}
-
-function listen() {
-	name=$1
-	#file=migbench.img
-	file=$2
-	#file=vm512-29.img
-	image=/var/lib/libvirt/images/nfs/c11node9/$file
-	#ram=1024
-	ram=$3
-	vcpu=$4 # 1-8
-	telnetport=$5 # starting 4436
-	vncport=$6 # starting 1 (5901)
-	listenport=$7 # starting 5436
-
-	qemudir=/root/qemu
-	#version=qemu-2.0
-	#version=qemu-postcopy # qemu 1.1.50
-	version=hybrid # qemu 1.6.50
-
-	echo $name $file $ram $vcpu $telnetport :$vncport tcp:0:$listenport
-
-	ssh $dest $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
-	        -name $name \
-	        -drive file=$image \
-	        -enable-kvm \
-	        -m $ram \
-	        -smp $vcpu \
-	        -monitor telnet:0:$telnetport,server,nowait \
-	        -vnc :$vncport \
-	        -incoming tcp:0:$listenport \
-	        -device virtio-net-pci,netdev=hn0,id=nic1 -netdev tap,helper=$qemudir/$version/qemu-bridge-helper,id=hn0 \
-	        -daemonize
 }
 
 # migrate a single VM
@@ -244,7 +203,7 @@ function migrate() {
 
 	# retrieve VM information from ps
 	# name mport ram vcpu tport vport
-	# 10   13    15   17   19    21
+	# 10   23(13)  15   17   19    21
 	#for (( i=0; i <$vwnd; i++ ))
 	#for vm in "${vms[@]}"
 	for vm in "${array[@]}"
@@ -262,7 +221,8 @@ function migrate() {
                 name=${name##*/}
 
 		#tcp:0:5452	
-		mport=`echo $vm | awk '{print $13}' | tr ':' '\n'`
+		#mport=`echo $vm | awk '{print $13}' | tr ':' '\n'`
+		mport=`echo $vm | awk '{print $23}' | tr ':' '\n'`
 		readarray -t mport <<< "$mport"
 		mport=${mport[2]}
 
@@ -282,32 +242,13 @@ function migrate() {
 		#echo $i $vm
 		echo $i $name $ram $vcpu ${tport} ${vport} ${mport}
 
-		ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
+		if ! $TEST ; then
+			ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
+		fi
 
 #		$migcmd
 		i=$(( i + 1))
 	#	echo
-	done
-}
-
-function migrateold() {
-	tport=4446 # telnet port
-	mport=5446 # migration tcp port
-	vport=1 # vnc port
-	name=master
-	migcmd="ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $masterpost $migspeed"
-#	$migcmd
-
-	#for (( i=100; i <$vwnd; i++ ))
-	for (( i=1; i <$vwnd; i++ ))
-	do
-		tport=$(( tport + 1 ))
-		vport=$(( vport + 1 ))
-		mport=$(( mport + 1 ))
-		name=slave$i
-		echo $i $name $tport $vport $mport
-		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
-#		$migcmd
 	done
 }
 
@@ -429,14 +370,18 @@ function migratecluster() {
 
 #	sleep $preptime
 	migrate 
-	check
-
+	
+	if ! $TEST ; then
+		check
+	fi
+	
 	if $LOGGING ; then
 	        # stop dstat
 	        pgrep -fl dstat| awk '{print $1}' | xargs kill -9
-	        ssh $from "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
-	        ssh $to "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
-	        ssh $router "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
+	        #ssh $from "pgrep -fl dstat| awk '{print \$1}' | xargs kill -9"
+	        #ssh $to "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
+	        #ssh $router "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
+
 		# delete the first 5 lines
 		#sed -i '1,5d' $dstatfile
 	#	download

@@ -12,6 +12,8 @@ Todo list
 
 Available functions
 
+- qfree: query or qemu memory free, get the memory usage for PM and VM
+- qalive: 
 - list
 - create
 - stop 
