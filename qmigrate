@@ -22,8 +22,8 @@ ram=2048
 vcpu=2
 
 # is logging enabled?
-LOGGING=false
-#LOGGING=true
+#LOGGING=false
+LOGGING=true
 
 #postcopy=on
 postcopy=off
@@ -190,7 +190,7 @@ nc $from $telnetport << EOF
 migrate_set_capability postcopy $postcopy
 migrate_set_capability postcopy-move-background $background
 migrate_set_speed $speed
-migrate tcp:$test:$listenport
+migrate tcp:$to:$listenport
 EOF
 
 	echo
@@ -281,7 +281,9 @@ function migrate() {
 
 		#echo $i $vm
 		echo $i $name $ram $vcpu ${tport} ${vport} ${mport}
-		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
+
+		ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
+
 #		$migcmd
 		i=$(( i + 1))
 	#	echo
@@ -326,10 +328,16 @@ function check() {
 		
 		# get the VM names
 		vms=`getVMNames $from`
-		remain=${#vms[@]}
+		
+		# split by line break
+		readarray -t array <<< "$vms"
+	
+		remain=${#array[@]}
+		echo current VMs: $remain
 
 		#for (( i = 0; i < $remain; i ++ ))
-		for vm in ${vms[@]}
+		#for vm in ${vms[@]}
+		for vm in "${array[@]}"
 		do
 			# check status by VM name
 			info=`./checkstatus $from $vm`
@@ -409,15 +417,13 @@ function migratecluster() {
 	if $LOGGING ; then
 	        dstatcmd="dstat -cnmd -N eth0,eth1,total --noheaders -o "
 	        #dstat -cmdngy -N eth0,eth1,total --noheaders > $dstatfile &
-		rm -rf $srccsv
+		ssh $from "mkdir $logdir; rm -rf $srccsv"
 	        ssh $from $dstatcmd $srccsv > $dstatfile &
 	        #ssh $dest "dstat -cmdngy -N eth0,eth1,total --noheaders" > $dstatdest &
-		#ssh $to mkdir -p $logdir
-		rm -rf $destcsv
+		ssh $to "mkdir -p $logdir; rm -rf $destcsv"
 		ssh $to $dstatcmd $destcsv > $dstatdest &
 		#ssh $dest "$dstatcmd $dstatdest" &
-		#ssh $router mkdir -p $logdir
-		rm -rf $routercsv
+		ssh $router "mkdir -p $logdir; rm -rf $routercsv"
 		ssh $router $dstatcmd $routercsv > $dstatrouter &
 	fi
 
@@ -436,8 +442,9 @@ function migratecluster() {
 	#	download
 
 		#ssh $dest mkdir -p $logdir
-		#scp $dest:$destcsv $prefix
-		#scp $router:$routercsv $prefix
+		scp $from:$srccsv $logdir
+		scp $to:$destcsv $logdir
+		scp $router:$routercsv $logdir
 	fi
 
         # plot host cpu/net usage

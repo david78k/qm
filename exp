@@ -60,7 +60,7 @@ ssh $router service tc delay $delay
 #ssh master "cd /root/mahout; ./run" &
 
 #logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
-time -p ./qmigrate $vwnd $run $rtt $turn
+time -p ./qmigrate $vwnd $run ${rtt}ms $turn
 
 # [ping] c11node9 to c11node10
 #if [[ $turn == "ping" ]]; then
