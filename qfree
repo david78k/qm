@@ -2,26 +2,37 @@
 
 hosts=( c11node9 c11node10 )
 
-# memory used
 #cmd="ps -ef | grep qemu | awk '{print \$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
 #cmd="ps -ef | grep qemu | awk '{print \$10}' | egrep 'slave|master|tomcat|jboss|mysql'"
+
+# VM names
 cmd="ps -ef | grep qemu | grep -v grep | awk '{print \$10}'"
+# memory used
 cmd2="free -m | head -2 | tail -1"
 
 echo -e "Node \t                 total       used       free     shared    buffers     cached"
 
 for host in ${hosts[@]}
 do
-	# list all the VMs including on other PMs
+	# list the VM names running on the host
 	vmstr=`ssh $host $cmd`
 	#echo $vmstr
+
+	# convert the string into an array
 	vms=($vmstr)	
 	#echo ${#vms[@]}vms
+
+	# display the host name with the number of VMs running on it
 	echo -n "$host (${#vms[@]}vms) "
+
 	qlist=`ssh $host ps -ef | grep qemu`
 	#echo "$qlist"
 	i=1
+	
+	# memory usage of the host
 	ssh $host "$cmd2"
+
+	# obtain the list of VMs runing on the host
 	vmstr=`ssh $host $cmd | while read vm 
 	do 
 		vms[$i]=$vm
@@ -36,6 +47,7 @@ do
 
 	#echo ${vms[@]}
 
+	# retrieve the memory usage of each VM using ssh
 	i=1
 	for vm in ${vms[@]}
 #	for vm in ${vms[*]}

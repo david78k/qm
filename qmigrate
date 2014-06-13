@@ -178,13 +178,29 @@ EOF
 	echo
 }
 
+# get the list of the VMs running on the host
+function getVMs() {
+	host=$1
+	ssh $host ps -ef | grep qemu | grep -v grep
+}
+
+# get infomration for a specific VM
+function getVMInfo() {
+	vmname=$1
+	getVMs | grep $vmname
+}
+
+# get the VM names of the host
+function getVMNames() {
+	host=$1
+	ssh $host ps -ef | grep qemu | grep -v grep | awk '{print $10}'
+}
+
+# get the number of current runing VMs of the host
 function getCNVMs() {
 	host=$1
-	cnvms=0
 
-	# get the number of current runing VMs
-	cnvms=`ssh $host ps -ef | grep qemu | grep -v grep | wc -l`
-	echo $cnvms			
+	ssh $host ps -ef | grep qemu | grep -v grep | wc -l
 }
 
 # migrate multiple VMs with VM window
@@ -196,7 +212,9 @@ function migrate() {
 		from=$dest
 		to=$src
 	fi
-	getCNVMs $from 
+
+	# get the number of current running VMs on the host
+	cnvms=`getCNVMs $from` 
 
 	echo number of current running VMs = $cnvms
 
@@ -204,6 +222,39 @@ function migrate() {
 		vwnd=$cnvms
 	fi	
 	echo vwnd = $vwnd
+
+	# get the list of VMs
+	vms=`getVMs $from`
+	#vms=`ssh $host "ps -ef | grep qemu | grep -v grep"`
+	echo $vms
+	readarray -t array <<< "$vms"
+	#set -f
+	#IFS='
+	#'
+	#cmd $vms
+	#unset IFS
+	#set +f
+	
+	i=0
+	#for (( i=0; i <$vwnd; i++ ))
+	#for vm in "${vms[@]}"
+	for vm in "${array[@]}"
+	do
+		# get the VM information for migration such as
+		# name, ram, vcpu, telnet port, vnc port, migration port
+		#vminfo=`getVMInfo $1`
+
+		tport=$(( tport + 1 ))
+		vport=$(( vport + 1 ))
+		mport=$(( mport + 1 ))
+		#name=slave$i
+		echo $i $vm
+		#echo $i $name $tport $vport $mport
+		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
+#		$migcmd
+		i=$(( i + 1))
+		echo
+	done
 }
 
 function migrateold() {
