@@ -322,12 +322,17 @@ function check() {
 	while [ 1 ]; 
 	do
 		# number of remaining VMs 
-		remain=`getCNVMs $from`
+		#remain=`getCNVMs $from`
+		
+		# get the VM names
+		vms=`getVMNames $from`
+		remain=${#vms[@]}
 
-		#for (( port=4446; port <4446 + $vwnd; port++ ))
-		for (( i = 0; i < $remain; i ++ ))
+		#for (( i = 0; i < $remain; i ++ ))
+		for vm in ${vms[@]}
 		do
-			info=`./checkstatus $from $port`
+			# check status by VM name
+			info=`./checkstatus $from $vm`
 			if [[ -z $info ]]; then
 				(( remain -- ))
 				continue
@@ -337,7 +342,7 @@ function check() {
 			#echo $status
 
 			if [[ $status == *completed* ]]; then
-				echo $port
+				echo $vm
 				echo "$info"
 
 				if $LOGGING ; then
@@ -345,7 +350,7 @@ function check() {
 				fi
 
 				# stop vm by name
-				./qstop $from $vmname
+				./qstop $from $vm
 				#./stopvm $dest $port
 				(( remain -- ))
 				continue
