@@ -409,12 +409,15 @@ function migratecluster() {
 	if $LOGGING ; then
 	        dstatcmd="dstat -cnmd -N eth0,eth1,total --noheaders -o "
 	        #dstat -cmdngy -N eth0,eth1,total --noheaders > $dstatfile &
-	        $dstatcmd $srccsv > $dstatfile &
+		rm -rf $srccsv
+	        ssh $from $dstatcmd $srccsv > $dstatfile &
 	        #ssh $dest "dstat -cmdngy -N eth0,eth1,total --noheaders" > $dstatdest &
-		ssh $dest mkdir -p $logdir
-		ssh $dest $dstatcmd $destcsv > $dstatdest &
+		#ssh $to mkdir -p $logdir
+		rm -rf $destcsv
+		ssh $to $dstatcmd $destcsv > $dstatdest &
 		#ssh $dest "$dstatcmd $dstatdest" &
-		ssh $router mkdir -p $logdir
+		#ssh $router mkdir -p $logdir
+		rm -rf $routercsv
 		ssh $router $dstatcmd $routercsv > $dstatrouter &
 	fi
 
@@ -425,7 +428,9 @@ function migratecluster() {
 	if $LOGGING ; then
 	        # stop dstat
 	        pgrep -fl dstat| awk '{print $1}' | xargs kill -9
-	        ssh $dest "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
+	        ssh $from "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
+	        ssh $to "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
+	        ssh $router "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
 		# delete the first 5 lines
 		#sed -i '1,5d' $dstatfile
 	#	download
