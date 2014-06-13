@@ -225,31 +225,30 @@ function migrate() {
 
 	# get the list of VMs
 	vms=`getVMs $from`
-	#vms=`ssh $host "ps -ef | grep qemu | grep -v grep"`
-	echo $vms
+	#echo $vms
+
+	# split by line break
 	readarray -t array <<< "$vms"
-	#set -f
-	#IFS='
-	#'
-	#cmd $vms
-	#unset IFS
-	#set +f
 	
 	i=0
 	#for (( i=0; i <$vwnd; i++ ))
 	#for vm in "${vms[@]}"
 	for vm in "${array[@]}"
 	do
+		if [ $i -ge $vwnd ]; then
+			break
+		fi
+
 		# get the VM information for migration such as
 		# name, ram, vcpu, telnet port, vnc port, migration port
 		#vminfo=`getVMInfo $1`
 
-		tport=$(( tport + 1 ))
-		vport=$(( vport + 1 ))
-		mport=$(( mport + 1 ))
+		tport=`echo $vm | awk '{print $19}'`
+		vport=`echo $vm | awk '{print $21}'`
+		mport=`echo $vm | awk '{print $13}'`
 		#name=slave$i
 		echo $i $vm
-		#echo $i $name $tport $vport $mport
+		echo $i $name $tport $vport $mport
 		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
 #		$migcmd
 		i=$(( i + 1))
