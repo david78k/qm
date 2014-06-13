@@ -8,11 +8,12 @@ router=c11node28
 ganglia=10.244.36.20
 
 # RTT = delay*2
-#delay=90	# 180ms RTT
-#delay=40	# 80ms RTT
-delay=10	# 20ms RTT
-#delay=0		# 0.4ms RTT (LAN)
-rtt=$(( delay * 2 ))ms
+#rtt=180	# 180ms RTT
+#rtt=80	# 80ms RTT
+rtt=20	# 20ms RTT
+#rtt=0		# 0.4ms RTT (LAN)
+delay=$(( rtt / 2 ))
+#rtt=$(( delay * 2 ))ms
 
 vwnd=2
 run=1
@@ -59,7 +60,7 @@ ssh $router service tc delay $delay
 #ssh master "cd /root/mahout; ./run" &
 
 #logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
-time -p ./migrate $vwnd $run $rtt $turn
+time -p ./qmigrate $vwnd $run $rtt $turn
 
 # [ping] c11node9 to c11node10
 #if [[ $turn == "ping" ]]; then

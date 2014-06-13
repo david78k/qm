@@ -58,6 +58,14 @@ remain=$nports
 PREV_TOTAL=0
 PREV_IDLE=0
 
+	from=$src
+	to=$dest
+	
+	if [ $turn == "pong" ]; then
+		from=$dest
+		to=$src
+	fi
+
 function doexp() {
 	# specify only exp-specific parameters
 
@@ -151,24 +159,39 @@ function ncmigrate() {
 	listenport=$7
 	postcopy=$8
 	speed=$9
-	#speed=125
-	#speed=30
 
 	background=off
 	#background=on
 	#mac=$3
 
+	image=/var/lib/libvirt/images/nfs/c11node9/$file
+
+	qemudir=/root/qemu
+	#version=qemu-2.0
+	#version=qemu-postcopy # qemu 1.1.50
+	version=hybrid # qemu 1.6.50
+
 	# prepare incoming migration at dest
 	# start vm
-	listen $name $file $ram $vcpu $telnetport $vncport $listenport 
-	#ssh $test /root/qemu/listen-daemon $file $ram $vcpu $telnetport $vncport $listenport $name
+	#listen $name $file $ram $vcpu $telnetport $vncport $listenport 
+	ssh $to $qemudir/$version/x86_64-softmmu/qemu-system-x86_64 \
+	        -name $name \
+	        -drive file=$image \
+	        -enable-kvm \
+	        -m $ram \
+	        -smp $vcpu \
+	        -monitor telnet:0:$telnetport,server,nowait \
+	        -vnc :$vncport \
+	        -incoming tcp:0:$listenport \
+	        -device virtio-net-pci,netdev=hn0,id=nic1 -netdev tap,helper=$qemudir/$version/qemu-bridge-helper,id=hn0 \
+	        -daemonize
 
 	#if [ $file == "master.qcow2" ]; then
 	#       telnetport=4436
 	#fi
 
 	# migrate
-nc $src $telnetport << EOF
+nc $from $telnetport << EOF
 migrate_set_capability postcopy $postcopy
 migrate_set_capability postcopy-move-background $background
 migrate_set_speed $speed
@@ -205,14 +228,6 @@ function getCNVMs() {
 
 # migrate multiple VMs with VM window
 function migrate() {
-	from=$src
-	to=$dest
-	
-	if [ $turn == "pong" ]; then
-		from=$dest
-		to=$src
-	fi
-
 	# get the number of current running VMs on the host
 	cnvms=`getCNVMs $from` 
 
@@ -251,18 +266,30 @@ function migrate() {
 		name=${name%.qcow2}
                 name=${name##*/}
 
-		mport=`echo $vm | awk '{print $13}'`
+		#tcp:0:5452	
+		mport=`echo $vm | awk '{print $13}' | tr ':' '\n'`
+		readarray -t mport <<< "$mport"
+		mport=${mport[2]}
+
 		ram=`echo $vm | awk '{print $15}'`
 		vcpu=`echo $vm | awk '{print $17}'`
-		tport=`echo $vm | awk '{print $19}'`
-		vport=`echo $vm | awk '{print $21}'`
+
+		# telnet:0:4452,server,nowait 
+		tport=`echo $vm | awk '{print $19}' | tr ',:' '\n'`
+		readarray -t tport <<< "$tport"
+		tport=${tport[2]}
+
+		#:7 
+		vport=`echo $vm | awk '{print $21}' | tr ':' '\n'`
+		readarray -t vport <<< "$vport"
+		vport=${vport[1]}
 
 		#echo $i $vm
-		echo $i $name $ram $vcpu $tport $vport $mport
+		echo $i $name $ram $vcpu ${tport} ${vport} ${mport}
 		#ncmigrate $name ${name}.qcow2 $ram $vcpu $tport $vport $mport $postcopy $migspeed
 #		$migcmd
 		i=$(( i + 1))
-		echo
+	#	echo
 	done
 }
 
