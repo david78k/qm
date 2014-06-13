@@ -49,9 +49,6 @@ sleeptime=5
 
 mkdir -p $logdir
 
-# number of remaining VMs to migrate
-remain=0
-
 # for cpu utilization
 PREV_TOTAL=0
 PREV_IDLE=0
@@ -312,17 +309,23 @@ function migrateold() {
 	done
 }
 
+# check if the migrations are finished and stop the completed VMs
 function check() {
 	miglog=$prefix.log
 	migtxt=$prefix.mig
-	rm -rf $miglog
+
+	if $LOGGING ; then
+		rm -rf $miglog
+	fi
 
 	#while [ $remain -gt 0 ]; 
 	while [ 1 ]; 
 	do
-		remain=$vwnd
-		#for port in ${ports[@]}; 
-		for (( port=4446; port <4446 + $vwnd; port++ ))
+		# number of remaining VMs 
+		remain=`getCNVMs $from`
+
+		#for (( port=4446; port <4446 + $vwnd; port++ ))
+		for (( i = 0; i < $remain; i ++ ))
 		do
 			info=`./checkstatus $from $port`
 			if [[ -z $info ]]; then
@@ -336,9 +339,13 @@ function check() {
 			if [[ $status == *completed* ]]; then
 				echo $port
 				echo "$info"
-				echo $info >> $miglog
 
-				./qstop $from $port
+				if $LOGGING ; then
+					echo $info >> $miglog
+				fi
+
+				# stop vm by name
+				./qstop $from $vmname
 				#./stopvm $dest $port
 				(( remain -- ))
 				continue
@@ -353,8 +360,11 @@ function check() {
 		fi
 		sleep $sleeptime
 	done
-	# convert mac format to unix
-	tr '\r' '\n' < $miglog > $migtxt
+
+	if $LOGGING ; then
+		# convert mac format to unix
+		tr '\r' '\n' < $miglog > $migtxt
+	fi
 }
 
 # download ganglia metrics

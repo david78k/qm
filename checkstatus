@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# check VM and migration status by name
+host=$1
+name=$2
+
+# get the telnet port
+port=`ssh $host ps -ef | grep qemu | grep $name | awk '{print $19,$21,$17}'`
+echo $port
+
+IFS='=:, '
+read -a array <<< "$port"
+IFS=''
+
+#echo ${array[2]}
+port=${array[2]}
+
+function checkVM () {
+nc $host $port << EOF
+info migrate
+info status
+EOF
+echo
+
+#quit
+#info migrate_capabilities
+}
+
+checkVM
+
