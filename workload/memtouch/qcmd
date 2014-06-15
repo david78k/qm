@@ -9,9 +9,10 @@ DEBUG=false
 
 # command to execute for each VM
 # memory used
-#cmd="free -m | head -2 | tail -1"
+hostcmd="free -m | head -2 | tail -1"
+
 #cmd="mkdir -p memtouch"
-cmd="cd /root/memtouch/; ./memtouch 512 10 &"
+cmd="cd /root/memtouch/; ./memtouch 512 0"
 #cmd="ps -ef | grep memtouch | grep -v memtouch"
 #cmd="skill memtouch"
 
@@ -35,7 +36,7 @@ do
 
 	# display host with the number of VMs running on it
 	echo -n "$host (${#vms[@]}vms) "
-	ssh $host "$cmd"
+	ssh $host "$hostcmd"
 
 	# execute the command (cmd) for each VM via ssh
 	i=1
@@ -52,7 +53,7 @@ do
 
 		echo -n "vm$i: $vm "
 		if ! $DEBUG; then
-			ssh $vm $cmd
+			ssh $vm $cmd &
 			#scp memtouch random.dat $vm:/root/memtouch/
 			#ssh $vm chmod u+x /root/memtouch/memtouch
 			echo
