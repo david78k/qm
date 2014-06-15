@@ -11,6 +11,9 @@
 
 # 3. don't care (naive): memory_to_be_assigned = specified_size
 
+# kill memtouch process
+# skill memtouch
+
 # memory update rate in MB/s
 #dirtyrate=$1
 dirtyrate=4 

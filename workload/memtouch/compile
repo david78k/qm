@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# memtouch
+#gcc -o memtouch memtouch.c
+
+# malloc
+gcc -o malloc malloc.c
