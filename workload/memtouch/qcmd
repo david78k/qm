@@ -9,11 +9,13 @@ DEBUG=false
 
 # command to execute for each VM
 # memory used
-cmd="free -m | head -2 | tail -1"
+#cmd="free -m | head -2 | tail -1"
+#cmd="mkdir -p memtouch"
+cmd="cd /root/memtouch/; ./memtouch 512 10 &"
+#cmd="ps -ef | grep memtouch | grep -v memtouch"
+#cmd="skill memtouch"
 
-if [ $# -gt 0 ]; then
-	cmd=$1
-fi
+#sshcmd="ssh"
 
 # get VM names
 vmnamecmd="ps -ef | grep qemu | grep -v grep | awk '{print \$10}'"
@@ -51,7 +53,9 @@ do
 		echo -n "vm$i: $vm "
 		if ! $DEBUG; then
 			ssh $vm $cmd
-			#echo
+			#scp memtouch random.dat $vm:/root/memtouch/
+			#ssh $vm chmod u+x /root/memtouch/memtouch
+			echo
 		fi
 
 		i=$(( i + 1 ))

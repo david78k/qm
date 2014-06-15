@@ -2,55 +2,38 @@
 
 hosts=( c11node9 c11node10 )
 
-#cmd="ps -ef | grep qemu | awk '{print \$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
-#cmd="ps -ef | grep qemu | awk '{print \$10}' | egrep 'slave|master|tomcat|jboss|mysql'"
+#DEBUG=true
+DEBUG=false
 
-# VM names
-cmd="ps -ef | grep qemu | grep -v grep | awk '{print \$10}'"
+#cmd="ps -ef | grep qemu | awk '{print \$10,\$14,\$15,\$16,\$17,\$19,\$20,\$21,\$23}' | egrep 'slave|master|tomcat|jboss|mysql'"
+
+# command to execute for each VM
 # memory used
-cmd2="free -m | head -2 | tail -1"
+cmd="free -m | head -2 | tail -1"
+
+# get VM names
+vmnamecmd="ps -ef | grep qemu | grep -v grep | awk '{print \$10}'"
 
 echo -e "Node \t                 total       used       free     shared    buffers     cached"
 
+# for each host, first get the list of VM names
+# and execute the command (cmd) for each VM via ssh
 for host in ${hosts[@]}
 do
-	# list the VM names running on the host
-	vmstr=`ssh $host $cmd`
+	# get the list of the VM names 
+	vmstr=`ssh $host $vmnamecmd`
 	#echo $vmstr
-
-	# convert the string into an array
 	vms=($vmstr)	
-	#echo ${#vms[@]}vms
 
-	# display the host name with the number of VMs running on it
+#	echo ${vms[*]}
+
+	# display host with the number of VMs running on it
 	echo -n "$host (${#vms[@]}vms) "
+	ssh $host "$cmd"
 
-	qlist=`ssh $host ps -ef | grep qemu`
-	#echo "$qlist"
-	i=1
-	
-	# memory usage of the host
-	ssh $host "$cmd2"
-
-	# obtain the list of VMs runing on the host
-	vmstr=`ssh $host $cmd | while read vm 
-	do 
-		vms[$i]=$vm
-		echo $vm
-	#	echo vm$i: $vm ${vms[$i]}
-		i=$(( i + 1 ))
-		#ssh "$vm; $cmd2"
-	#	echo ${vms[@]}
-	done`
-
-	#echo ${#vms[*]}
-
-	#echo ${vms[@]}
-
-	# retrieve the memory usage of each VM using ssh
+	# execute the command (cmd) for each VM via ssh
 	i=1
 	for vm in ${vms[@]}
-#	for vm in ${vms[*]}
 	do
 		# file=/var/lib/libvirt/images/nfs/c11node9/slave6.qcow2
                 if [[ $vm == *qcow2* ]]; then
@@ -62,12 +45,12 @@ do
                 fi
 
 		echo -n "vm$i: $vm "
-		ssh $vm $cmd2
+		if ! $DEBUG; then
+			ssh $vm $cmd
+		fi
+
 		i=$(( i + 1 ))
 	done
-
-	#ps -ef | grep qemu | awk '{print $10,$12,$13,$14,$15,$17,$18,$19}' | egrep 'slave|master|tomcat|jboss|mysql'
-	#ps -ef | grep qemu -n
 
 	# grep name or image name
 	vmnames=`ssh $host ps -ef | grep qemu`
