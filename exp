@@ -15,13 +15,13 @@ rtt=180	# 180ms RTT
 delay=$(( rtt / 2 ))
 #rtt=$(( delay * 2 ))ms
 
-vwnd=8
-run=2
+vwnd=2
+run=1
 prefix=${vwnd}vms-r${run}
 #prefix=1vm-r4
 
 # ping or pong
-turn=pong
+turn=ping
 
 logdir=/root/qm/log
 logfile=$logdir/${prefix}.logfile

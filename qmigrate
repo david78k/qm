@@ -363,6 +363,8 @@ function migratecluster() {
 	dstatrouter=$prefix.router.dstat
 	routercsv=$dstatrouter.csv
 	
+	# release the VM memory
+	qcmd "skill memtouch"
 	# fill up the VM memory
 	# memtouch memory_allocation update_rate
 	 ./workload/memtouch/qcmd $umem 0 
@@ -381,7 +383,7 @@ function migratecluster() {
 		ssh $router $dstatcmd $routercsv > $dstatrouter &
 
 		# iftop for individual migration traffic
-		ssh $src iftop -tBPni eth1 > $iftoplog &
+		ssh $from iftop -tBPni eth1 > $iftoplog &
 		# -t: text interface without ncurses
 		# -B: Display bandwidth in bytes
 		# -P: show ports as well as hosts
@@ -396,9 +398,6 @@ function migratecluster() {
 		check
 	fi
 	
-	# release the VM memory
-	qcmd "skill memtouch"
-
 	# clean up logging
 	if $LOGGING ; then
 	        # stop dstat
@@ -423,11 +422,14 @@ function migratecluster() {
         # plot host cpu/net usage
 	# fix to add both send/receive
         plotcpu="./plotcpu"
-        plotnet="./plotnet"
+        plotnet="./plot/plotnet"
         #$plotcpu $dstatfile
-        #$plotnet $dstatfile
+        $plotnet $srccsv $vwnd
         #$plotcpu $dstatdest
         #$plotnet $dstatdest
+
+	# release the VM memory
+	#qcmd "skill memtouch"
 }
 
 # average cpu usage since the last measurement
