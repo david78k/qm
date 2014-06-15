@@ -8,15 +8,15 @@ router=c11node28
 ganglia=10.244.36.20
 
 # RTT = delay*2
-#rtt=180	# 180ms RTT
+rtt=180	# 180ms RTT
 #rtt=80	# 80ms RTT
 #rtt=20	# 20ms RTT
-rtt=0		# 0.4ms RTT (LAN)
+#rtt=0		# 0.4ms RTT (LAN)
 delay=$(( rtt / 2 ))
 #rtt=$(( delay * 2 ))ms
 
-vwnd=2
-run=1
+vwnd=8
+run=2
 prefix=${vwnd}vms-r${run}
 #prefix=1vm-r4
 

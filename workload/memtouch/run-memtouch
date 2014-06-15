@@ -1,0 +1,33 @@
+#!/bin/bash
+# runs memtouch program with memory size specified
+# three types: full, limited, don't care (naive)
+
+# 1. full: memory_to_be_assigned = total_mem - used_mem
+#    memory usage afterward: total_mem
+#    usage: run-memtouch dirty_rate 
+
+# 2. limited: memory_to_be_assigned = specified_size - used_mem
+#    memory usage afterward: specified_size
+
+# 3. don't care (naive): memory_to_be_assigned = specified_size
+
+# memory update rate in MB/s
+#dirtyrate=$1
+dirtyrate=4 
+
+# take up the full memory size
+# memory_to_be_assigned = total_mem - used_mem
+total=`free -m | grep Mem | awk '{print $2}'`
+used=`free -m | grep Mem | awk '{print $3}'`
+#free -m | grep Mem | awk '{print "\t" $3 "\t" $2 "\t" $4 "\t" $5 "\t" $6}'
+#size=`expr $maxmem "-" $mem`
+let "size=$total-$used"
+
+# assign the memory size subtracted the current memory used from the specified size 
+specified=$1
+size=$(( specified - used ))
+
+./memtouch $size $dirtyrate &
+
+#sleep 3
+#free -m | grep Mem | awk '{print "\t" $3 "\t" $2 "\t" $4 "\t" $5 "\t" $6}'
