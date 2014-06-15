@@ -18,8 +18,8 @@ turn=$4
 # VM total memory size
 ram=2048
 #ram=1800
-# VM actual memory usage
-actual=512
+# used ram: VM actual memory usage
+uram=512
 #vcpu=1
 vcpu=2
 
@@ -37,7 +37,7 @@ masterpost=off
 
 # log/idle/cluster/precopy/speed125/vcpu2/180ms/
 logbasedir=/root/miglog/idle/cluster
-logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/actual$actual/$rtt
+logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/uram$uram/$rtt
 #logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/$rtt
 
 #vcpu=1
@@ -365,7 +365,7 @@ function migratecluster() {
 	
 	# fill up the VM memory
 	# memtouch memory_allocation update_rate
-	 ./workload/memtouch/qcmd $actual 0	
+	 ./workload/memtouch/qcmd $uram 0 
 
 	# start logging
 	if $LOGGING ; then
@@ -406,7 +406,8 @@ function migratecluster() {
 	        #ssh $from "pgrep -fl dstat| awk '{print \$1}' | xargs kill -9"
 	        #ssh $to "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
 	        #ssh $router "pgrep -fl dstat| awk '{print $1}' | xargs kill -9"
-		ssh $from "skill iftop"
+	        pgrep -fl iftop | awk '{print $1}' | xargs kill -9
+		#ssh $from "skill iftop"
 
 		# delete the first 5 lines
 		#sed -i '1,5d' $dstatfile
@@ -414,7 +415,7 @@ function migratecluster() {
 
 		#ssh $dest mkdir -p $logdir
 		scp $from:$srccsv $logdir
-		scp $from:$iftoplog $logdir
+		#scp $from:$iftoplog $logdir
 		scp $to:$destcsv $logdir
 		scp $router:$routercsv $logdir
 	fi
