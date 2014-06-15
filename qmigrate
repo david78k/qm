@@ -274,6 +274,7 @@ function check() {
 		# split by line break
 		#readarray -t array <<< "$vms"
 	
+		# get the number of VMs being migrated
 		#remain=${#array[@]}
 		remain=${#migvms[@]}
 		#echo current VMs: $remain
@@ -368,6 +369,14 @@ function migratecluster() {
 		#ssh $dest "$dstatcmd $dstatdest" &
 		ssh $router "mkdir -p $logdir; rm -rf $routercsv"
 		ssh $router $dstatcmd $routercsv > $dstatrouter &
+
+		# iftop for individual migration traffic
+		#ssh $src iftop -tBPni eth1 > iftop.log
+		# -t: text interface without ncurses
+		# -B: Display bandwidth in bytes
+		# -P: show ports as well as hosts
+		# -n: don't do hostname lookups
+		# -i interface: listen on named interface
 	fi
 
 #	sleep $preptime
