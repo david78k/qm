@@ -16,7 +16,7 @@ delay=$(( rtt / 2 ))
 #rtt=$(( delay * 2 ))ms
 
 vwnd=8
-run=1
+run=2
 prefix=${vwnd}vms-r${run}
 #prefix=1vm-r4
 

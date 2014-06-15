@@ -18,8 +18,8 @@ turn=$4
 # VM total memory size
 ram=2048
 #ram=1800
-# used ram: VM actual memory usage
-uram=512
+# used memory: VM actual memory usage
+umem=512
 #vcpu=1
 vcpu=2
 
@@ -37,7 +37,7 @@ masterpost=off
 
 # log/idle/cluster/precopy/speed125/vcpu2/180ms/
 logbasedir=/root/miglog/idle/cluster
-logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/uram$uram/$rtt
+logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/umem$umem/$rtt
 #logdir=$logbasedir/precopy/speed$migspeed/vcpu$vcpu/$rtt
 
 #vcpu=1
@@ -365,13 +365,13 @@ function migratecluster() {
 	
 	# fill up the VM memory
 	# memtouch memory_allocation update_rate
-	 ./workload/memtouch/qcmd $uram 0 
+	 ./workload/memtouch/qcmd $umem 0 
 
 	# start logging
 	if $LOGGING ; then
 	        dstatcmd="dstat -cnmd -N eth0,eth1,total --noheaders -o "
 	        #dstat -cmdngy -N eth0,eth1,total --noheaders > $dstatfile &
-		ssh $from "mkdir $logdir; rm -rf $srccsv"
+		ssh $from "mkdir -p $logdir; rm -rf $srccsv"
 	        ssh $from $dstatcmd $srccsv > $dstatfile &
 	        #ssh $dest "dstat -cmdngy -N eth0,eth1,total --noheaders" > $dstatdest &
 		ssh $to "mkdir -p $logdir; rm -rf $destcsv"
@@ -397,7 +397,7 @@ function migratecluster() {
 	fi
 	
 	# release the VM memory
-	# qcmd "skill memtouch"
+	qcmd "skill memtouch"
 
 	# clean up logging
 	if $LOGGING ; then
