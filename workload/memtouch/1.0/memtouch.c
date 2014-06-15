@@ -1,10 +1,10 @@
 /* 
- * memtouch 2.0
+ * memtouch 1.0
  * 
- * by Tae Seung Kang 
- * 6/15/2014
+ * written by Takahiro Hirofuchi 
+ * modified by Tae Seung Kang 
  *
- * usage: memtouch [size (mbytes)] [speed (mbytes/s)]
+ * ./memtouch [size (mbytes)] [speed (mbytes/s)]
  *
  * size: the size of the buffer that memtouch allocates.
  * speed: the speed that memtouch makes pages dirty.
@@ -14,10 +14,6 @@
  * to use the function to fill the buffer with random values, if you use
  * the -no-dedupe option of Qemu.
  *
- * change log:
- * - speed 0 is acceptible
- * - get the memory information: memory used, total memory, free memory
- * 
  */
 #include <string.h>
 #include <stdlib.h>
@@ -30,10 +26,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
-
-#include <limits.h>
-
-#define DEBUG 0
 
 int main(int argc, char **argv)
 {
@@ -114,21 +106,12 @@ int main(int argc, char **argv)
 	unsigned long counter = 0;
 
 	for (;;) {
-		printf("sleeping ...\n");
-
-		if (updated_pages == 0) {
-			sleep(UINT_MAX);
-			continue;
-		}
-			
 		for (i = 0; i < npages; i++) {
 			char *ch = membuf + i * 4096;
 			char tmp = *ch;
 			*ch = ~tmp;
 
-			if (DEBUG)
-				printf("%x %x\n", tmp, *ch); 
-
+			// printf("%x %x\n", tmp, *ch); 
 			if ((counter % updated_pages) == 0) {
 				int usec = sleep_time * 1000 * 1000;
 				usleep(usec);
