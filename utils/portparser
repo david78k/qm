@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# parse iftop file to extract 2second rate and cumulative data
+infile=$1
+ports=$1.ports
+portslog=$ports.log
+port=
+portlog=$infile.$port
+
+# extract rates of all ports
+grep $port $ports > $portfile
+
+# process by port
+for port in ${ports[@]}
+do
+	# extract only the corresponding port 
+	grep $port $portfile > $portlog
+	
+	# convert KB to MB
+	
+done

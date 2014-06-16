@@ -8,19 +8,22 @@ router=c11node28
 ganglia=10.244.36.20
 
 # RTT = delay*2
-#rtt=180	# 180ms RTT
+rtt=180	# 180ms RTT
 #rtt=80	# 80ms RTT
 #rtt=20	# 20ms RTT
-rtt=0		# 0.4ms RTT (LAN)
+#rtt=0		# 0.4ms RTT (LAN)
 delay=$(( rtt / 2 ))
 #rtt=$(( delay * 2 ))ms
 
 # ping or pong (dest to src)
 turn=pong
+#vwnds=( 1 2 3 4 5 6 7 8 )
 vwnd=8
-run=1
+run=2
 prefix=${vwnd}vms-r${run}
 #prefix=1vm-r4
+
+sleeptime=120
 
 logdir=/root/qm/log
 logfile=$logdir/${prefix}.logfile
@@ -53,6 +56,11 @@ function download() {
 	done
 }
 
+function domigrate() {
+	./qmigrate $vwnd $run ${rtt}ms $turn
+	sleep $sleeptime
+}
+
 ssh $router service tc delay $delay
 
 # run workload: wordcount, terasort, kmeans, fuzzy kmeans, LDA
@@ -62,19 +70,16 @@ if [ $rtt == 0 ]; then
 	rtt=0.4
 fi
 
-#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
-time -p ./qmigrate $vwnd $run ${rtt}ms $turn
+#for vwnd in ${vwnds[@]}
+#do
+	#for run in ${runs[@]}
+	#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
+vwnd=8; turn=ping; domigrate
+vwnd=7; turn=pong; domigrate
+vwnd=6; turn=ping; domigrate
+vwnd=5; turn=ping; domigrate
 
-# [ping] c11node9 to c11node10
-#if [[ $turn == "ping" ]]; then
-#	./migrate $vwnd $run $rtt
-#fi
-
-# [pong] c11node10 to c11node9
-#if [[ $turn == "pong" ]]; then
-#	./migrate $vwnd $run $rtt
-#	ssh $dest "cd /root/qemu/; ./cluster $vwnd $run"
-#fi
+#done
 
 #download
 
