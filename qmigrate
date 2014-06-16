@@ -51,7 +51,7 @@ prefix=$logdir/${vwnd}vms-r${run}
 preptime=90
 
 # sleep interval
-sleeptime=5
+sleeptime=1
 
 mkdir -p $logdir
 
