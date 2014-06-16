@@ -266,6 +266,8 @@ function check() {
 		rm -rf $miglog
 	fi
 
+	START=$(date +%s.%N)
+
 	#while [ $remain -gt 0 ]; 
 	while [ 1 ]; 
 	do
@@ -322,7 +324,13 @@ function check() {
 		sleep $sleeptime
 	done
 
+	END=$(date +%s.%N)
+	DIFF=$(echo "$END - $START" | bc)
+
 	if $LOGGING ; then
+		# elapsed time
+		echo real $DIFF >> $miglog
+
 		# convert mac format to unix
 		tr '\r' '\n' < $miglog > $migtxt
 	fi
@@ -391,8 +399,6 @@ function migratecluster() {
 		# -i interface: listen on named interface
 	fi
 
-	START=$(date +%s.%N)
-
 #	sleep $preptime
 	migrate 
 	
@@ -400,9 +406,6 @@ function migratecluster() {
 		check
 	fi
 	
-	END=$(date +%s.%N)
-	DIFF=$(echo "$END - $START" | bc)
-
 	# clean up logging
 	if $LOGGING ; then
 	        # stop dstat
@@ -422,16 +425,16 @@ function migratecluster() {
 		#scp $from:$iftoplog $logdir
 		scp $to:$destcsv $logdir
 		scp $router:$routercsv $logdir
-	fi
 
-        # plot host cpu/net usage
-	# fix to add both send/receive
-        plotcpu="./plotcpu"
-        plotnet="./plot/plotnet"
-        #$plotcpu $dstatfile
-        $plotnet $srccsv $vwnd
-        #$plotcpu $dstatdest
-        #$plotnet $dstatdest
+        	# plot host cpu/net usage
+		# fix to add both send/receive
+        	plotcpu="./plotcpu"
+        	plotnet="./plot/plotnet"
+        	#$plotcpu $dstatfile
+        	$plotnet $srccsv $vwnd
+        	#$plotcpu $dstatdest
+        	#$plotnet $dstatdest
+	fi
 
 	# release the VM memory
 	#qcmd "skill memtouch"

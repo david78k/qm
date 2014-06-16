@@ -8,20 +8,20 @@ router=c11node28
 ganglia=10.244.36.20
 
 # RTT = delay*2
-rtt=180	# 180ms RTT
-#rtt=80	# 80ms RTT
+#rtt=180	# 180ms RTT
+rtt=80	# 80ms RTT
 #rtt=20	# 20ms RTT
 #rtt=0		# 0.4ms RTT (LAN)
 delay=$(( rtt / 2 ))
 #rtt=$(( delay * 2 ))ms
 
-vwnd=5
-run=2
+vwnd=8
+run=1
 prefix=${vwnd}vms-r${run}
 #prefix=1vm-r4
 
 # ping or pong (dest to src)
-turn=ping
+turn=pong
 
 logdir=/root/qm/log
 logfile=$logdir/${prefix}.logfile
