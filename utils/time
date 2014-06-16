@@ -1,0 +1,11 @@
+#!/bin/bash
+
+START=$(date +%s.%N)
+
+#command
+free -m
+
+END=$(date +%s.%N)
+DIFF=$(echo "$END - $START" | bc)
+
+echo real: ${DIFF} \(sec\)

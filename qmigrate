@@ -391,6 +391,8 @@ function migratecluster() {
 		# -i interface: listen on named interface
 	fi
 
+	START=$(date +%s.%N)
+
 #	sleep $preptime
 	migrate 
 	
@@ -398,6 +400,9 @@ function migratecluster() {
 		check
 	fi
 	
+	END=$(date +%s.%N)
+	DIFF=$(echo "$END - $START" | bc)
+
 	# clean up logging
 	if $LOGGING ; then
 	        # stop dstat
