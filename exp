@@ -19,7 +19,7 @@ delay=$(( rtt / 2 ))
 turn=pong
 #vwnds=( 1 2 3 4 5 6 7 8 )
 vwnd=8
-run=2
+run=1
 prefix=${vwnd}vms-r${run}
 #prefix=1vm-r4
 
@@ -57,8 +57,8 @@ function download() {
 }
 
 function domigrate() {
-	./qmigrate $vwnd $run ${rtt}ms $turn
 	sleep $sleeptime
+	./qmigrate $vwnd $run ${rtt}ms $turn
 }
 
 ssh $router service tc delay $delay
@@ -74,10 +74,16 @@ fi
 #do
 	#for run in ${runs[@]}
 	#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
+sleeptime=0
 vwnd=8; turn=ping; domigrate
+sleeptime=180
 vwnd=7; turn=pong; domigrate
 vwnd=6; turn=ping; domigrate
-vwnd=5; turn=ping; domigrate
+vwnd=5; turn=pong; domigrate
+vwnd=4; turn=ping; domigrate
+vwnd=3; turn=pong; domigrate
+vwnd=2; turn=pong; domigrate
+vwnd=1; turn=pong; domigrate
 
 #done
 

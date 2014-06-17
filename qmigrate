@@ -19,7 +19,8 @@ turn=$4
 ram=2048
 #ram=1800
 # used memory: VM actual memory usage
-umem=512
+#umem=512
+umem=1024
 #vcpu=1
 vcpu=2
 
