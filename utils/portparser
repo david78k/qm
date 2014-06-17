@@ -1,24 +1,28 @@
 #!/bin/bash
 
 # parse iftop file to extract 2second rate and cumulative data
+# first run init function and then run parse function
+
+host=10.244.34.4
+
 infile=$1
 prefix=${infile%.*}
 portsfile=$prefix.ports
 ports=( 54867 55270 50538 45881 60799 )
 portslog=$ports.log
 port=
-portlog=$infile.$port
+#portlog=$portsfile.$port
 
 suffix=KB
 
 #echo $prefix
 
+function init() {
 # extract rates of all ports
-host=10.244.34.4
 grep $host: $infile | egrep -v "ssh|728|privatewire|jmb-cds2|asc-slmd|n1-rmgmt" > $portsfile
 #grep $host: $infile | egrep -v "ssh|728|privatewire" | grep -v jmb-cds2 | grep -v asc-slmd | grep -v n1-rmgmt  
 
-echo $portsfile created
+echo $portsfile generated
 
 # get unique ports
 results=`awk '{print $1, $2}' $portsfile | head -20`
@@ -41,14 +45,20 @@ do
 done
 
 echo ${ports[*]}
+}
 
 # infile = *.ports
 function parse() {
 # process by port
-#for port in ${ports[@]}
-#do
+i=1
+for port in ${ports[@]}
+do
+	echo -n "$port "
+	portlog=$portsfile.$i
+
 	# extract only the corresponding port 
-#	grep $port $portfile > $portlog
+	grep $port $portsfile | awk '{print $4,$7}' > $portlog
+	echo $portlog generated
 	
 	# convert KB to MB
 	while read line
@@ -82,7 +92,11 @@ function parse() {
 			#number=`echo ${number} / 1024 | dc`
 			# conver KB to MB
 			number=`echo $number | awk '{$1/=1024; printf "%.2f\n", $1}'`
-		fi	
+		elif [[ ${rate: -2} == "MB" ]]; then
+			number=$number
+		elif [[ ${rate: -1} == "B" ]]; then
+			number=`echo $number | awk '{printf "0\n"}'`
+		fi
 		echo -n "$number "
 
 		if [[ ${cumulative: -2} == "KB" ]]; then
@@ -90,9 +104,12 @@ function parse() {
 		fi
 
 		echo $number2
-	done < $infile	
-#done
+	done < $portlog
+
+	i=$(( i + 1 ))
+done
 }
 
-
+#init
+parse
 
