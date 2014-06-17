@@ -2,19 +2,45 @@
 
 # parse iftop file to extract 2second rate and cumulative data
 infile=$1
-portsfile=$1.ports
-ports=( )
+prefix=${infile%.*}
+portsfile=$prefix.ports
+ports=( 54867 55270 50538 45881 60799 )
 portslog=$ports.log
 port=
 portlog=$infile.$port
 
 suffix=KB
 
+#echo $prefix
+
 # extract rates of all ports
 host=10.244.34.4
-grep $host: $infile | egrep -v "ssh|728|privatewire|jmb-cds2|asc-slmd|n1-rmgmt"  
+grep $host: $infile | egrep -v "ssh|728|privatewire|jmb-cds2|asc-slmd|n1-rmgmt" > $portsfile
 #grep $host: $infile | egrep -v "ssh|728|privatewire" | grep -v jmb-cds2 | grep -v asc-slmd | grep -v n1-rmgmt  
-#$ports > $portsfile
+
+echo $portsfile created
+
+# get unique ports
+results=`awk '{print $1, $2}' $portsfile | head -20`
+echo "$results"
+
+results=`awk '{print $2}' $portsfile | head -20`
+#echo $results
+
+for result in ${results[@]}
+do
+#	echo $result
+	IFS=': '
+	read -a array <<< "$result"	
+	unset IFS
+
+	#echo ${array[*]}
+	#echo ${array[0]} # num
+	echo -n "${array[1]} " # port
+	#echo
+done
+
+echo ${ports[*]}
 
 # infile = *.ports
 function parse() {
