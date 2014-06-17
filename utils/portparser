@@ -117,7 +117,8 @@ do
 done
 
 # merge all files
-paste $allports
+# select order by wc -l
+paste $allports > $portsfile
 }
 
 # generates *.ports
@@ -133,7 +134,7 @@ done
 paste $allports
 }
 
-init
-#parse
+#init
+parse
 #merge
 
