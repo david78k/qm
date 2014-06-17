@@ -69,42 +69,6 @@ echo vwnd = $vwnd, run = $run, RTT = $rtt, turn = $turn
 PREV_TOTAL=0
 PREV_IDLE=0
 
-function doexp() {
-	# specify only exp-specific parameters
-
-	# RTT = delay*2
-	#delay=90       # 180ms RTT
-	#delay=40       # 80ms RTT
-	delay=10        # 20ms RTT
-	#delay=0                # 0.4ms RTT (LAN)
-	rtt=$(( delay * 2 ))ms
-
-	vwnd=2
-	run=1
-	prefix=${vwnd}vms-r${run}
-	#prefix=1vm-r4
-
-	# ping or pong
-	turn=pong
-
-	logdir=/root/qm/log
-	logfile=$logdir/${prefix}.logfile
-
-	# last minutes for ganglia metrics
-	#min=3min
-	min=5min
-
-	ssh $router service tc delay $delay
-
-	# run workload: wordcount, terasort, kmeans, fuzzy kmeans, LDA
-	#ssh master "cd /root/mahout; ./run" &
-
-	#logsave $logfile time -p ./migrate $vwnd $run $rtt $turn
-	time -p ./migrate $vwnd $run $rtt $turn
-
-	ssh $router service tc stop
-}
-
 # migrate a single VM
 function ncmigrate() {
 	name=$1

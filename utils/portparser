@@ -7,15 +7,57 @@ portslog=$ports.log
 port=
 portlog=$infile.$port
 
+suffix=KB
+
 # extract rates of all ports
-grep $port $ports > $portfile
+#grep $port $ports > $portfile
 
 # process by port
-for port in ${ports[@]}
-do
+#for port in ${ports[@]}
+#do
 	# extract only the corresponding port 
-	grep $port $portfile > $portlog
+#	grep $port $portfile > $portlog
 	
 	# convert KB to MB
+	while read line
+	do
+	#	echo $line
+
+		# split rate and cumulative
+		IFS=' '
+		read -a array <<< "$line"	
+		unset IFS
 	
-done
+		rate=${array[0]}
+		cumulative=${array[1]}
+
+	#	echo $rate, $cumulative
+		#line=${line%KB}
+		#echo ${array[0]}
+		#echo ${array[1]}
+		#echo $line
+
+		
+		# remove the last two characters
+		number=${rate%?B}
+		number2=${cumulative%?B}
+
+		if [[ ${rate: -2} == "KB" ]]; then
+#			echo -n "KB "	
+#			echo $number
+			#number=$(( (number + 512) / 1024 ))
+			#number=$( echo "$number / 1024" | bc )
+			#number=`echo ${number} / 1024 | bc`
+			#number=`echo ${number} / 1024 | dc`
+			# conver KB to MB
+			number=`echo $number | awk '{$1/=1024; printf "%.2f\n", $1}'`
+		fi	
+		echo -n "$number "
+
+		if [[ ${cumulative: -2} == "KB" ]]; then
+			number2=`echo $number2 | awk '{$1/=1024; printf "%.2f\n", $1}'`
+		fi
+
+		echo $number2
+	done < $infile	
+#done
