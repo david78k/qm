@@ -8,10 +8,8 @@ host=10.244.34.4
 infile=$1
 prefix=${infile%.*}
 portsfile=$prefix.ports
+portslog=$portsfile.log
 ports=( 54867 55270 50538 45881 60799 )
-portslog=$ports.log
-port=
-#portlog=$portsfile.$port
 
 suffix=KB
 
@@ -54,7 +52,10 @@ i=1
 for port in ${ports[@]}
 do
 	echo -n "$port "
-	portlog=$portsfile.$i
+	portfile=$portsfile.$i
+	portlog=$portfile.log
+	
+	rm -rf $portfile
 
 	# extract only the corresponding port 
 	grep $port $portsfile | awk '{print $4,$7}' > $portlog
@@ -97,19 +98,33 @@ do
 		elif [[ ${rate: -1} == "B" ]]; then
 			number=`echo $number | awk '{printf "0\n"}'`
 		fi
-		echo -n "$number "
+		#echo -n "$number "
 
 		if [[ ${cumulative: -2} == "KB" ]]; then
 			number2=`echo $number2 | awk '{$1/=1024; printf "%.2f\n", $1}'`
 		fi
 
-		echo $number2
+		#echo $number2
+		echo $number $number2 >> $portfile
 	done < $portlog
 
 	i=$(( i + 1 ))
 done
 }
 
+function merge() {
+i=1
+for port in ${ports[@]}
+do
+	echo -n "$port "
+	
+	i=$(( i + 1 ))
+done
+
+paste $allports
+}
+
 #init
 parse
+#merge
 
