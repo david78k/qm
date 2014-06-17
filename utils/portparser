@@ -9,24 +9,25 @@ infile=$1
 prefix=${infile%.*}
 portsfile=$prefix.ports
 portslog=$portsfile.log
-ports=( 54867 55270 50538 45881 60799 )
+ports=( 48394 41828 37295 55313 50581 54910 )
 
 suffix=KB
 
 #echo $prefix
 
+# generates *.ports.log
 function init() {
 # extract rates of all ports
-grep $host: $infile | egrep -v "ssh|728|privatewire|jmb-cds2|asc-slmd|n1-rmgmt" > $portsfile
+grep $host: $infile | egrep -v "ssh|:728|privatewire|jmb-cds2|asc-slmd|n1-rmgmt|n1-fwp|nssalertmgr|ctiprogramload" > $portslog
 #grep $host: $infile | egrep -v "ssh|728|privatewire" | grep -v jmb-cds2 | grep -v asc-slmd | grep -v n1-rmgmt  
 
-echo $portsfile generated
+echo $portslog generated
 
 # get unique ports
-results=`awk '{print $1, $2}' $portsfile | head -20`
+results=`awk '{print $1, $2}' $portslog | head -20`
 echo "$results"
 
-results=`awk '{print $2}' $portsfile | head -20`
+results=`awk '{print $2}' $portslog | head -20`
 #echo $results
 
 for result in ${results[@]}
@@ -42,10 +43,13 @@ do
 	#echo
 done
 
-echo ${ports[*]}
+echo
+echo Ports selected: ${ports[*]}
+echo These ports may be old. You may need to select new ports.
 }
 
-# infile = *.ports
+# infile = *.ports.log
+# generates *.ports
 function parse() {
 # process by port
 i=1
@@ -58,7 +62,7 @@ do
 	rm -rf $portfile
 
 	# extract only the corresponding port 
-	grep $port $portsfile | awk '{print $4,$7}' > $portlog
+	grep $port $portslog | awk '{print $4,$7}' > $portlog
 	echo $portlog generated
 	
 	# convert KB to MB
@@ -108,23 +112,28 @@ do
 		echo $number $number2 >> $portfile
 	done < $portlog
 
+	allports=`echo $allports $portfile`
 	i=$(( i + 1 ))
 done
+
+# merge all files
+paste $allports
 }
 
+# generates *.ports
 function merge() {
 i=1
 for port in ${ports[@]}
 do
 	echo -n "$port "
-	
+	allports=`echo $allports`
 	i=$(( i + 1 ))
 done
 
 paste $allports
 }
 
-#init
-parse
+init
+#parse
 #merge
 
